@@ -1,0 +1,179 @@
+:root
+{
+	/* https://colorhunt.co/palette/37353e44444e715a5ad3dad9 */
+	--color-darkest: #37353E;
+	--color-dark: #44444E;
+	--color-accent: #715A5A;
+	--color-light: #D3DAD9;
+}
+
+body
+{
+	background-color: var(--color-darkest);
+	font-family: 'Ubuntu', sans-serif;
+	margin: 0;
+	padding-bottom: 40px;
+}
+
+#title
+{
+	font-size: 40px;
+	width: 100%;
+	margin: 2% 0;
+	text-align: center;
+	color: var(--color-light);
+}
+
+#inner-title
+{
+	display: inline-block;
+	font-size: 0.8em;
+	width: 90%;
+	text-align: center;
+	margin-left: 5%;
+	margin-bottom: 2%;
+	color: var(--color-light);
+	opacity: 0.85;
+}
+
+/* ---- shared panel look (login, register, add/edit contact) ---- */
+#loginDiv,
+#registerDiv,
+#addContactDiv,
+#editContactDiv,
+#searchDiv,
+#contactsListDiv
+{
+	font-size: 20px;
+	width: 70%;
+	max-width: 800px;
+	margin: 0 auto 20px auto;
+	padding: 25px;
+	background-color: var(--color-dark);
+	border-radius: 8px;
+	box-sizing: border-box;
+	text-align: center;
+	color: var(--color-light);
+}
+
+#loggedInDiv
+{
+	font-size: 20px;
+	width: 70%;
+	max-width: 800px;
+	margin: 0 auto 20px auto;
+	padding: 15px 25px;
+	background-color: var(--color-dark);
+	border-radius: 8px;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	color: var(--color-light);
+}
+
+input[type="text"],
+input[type="password"]
+{
+	border-radius: 25px;
+	border: 1px solid var(--color-accent);
+	background-color: var(--color-light);
+	color: var(--color-darkest);
+	text-align: center;
+	width: 80%;
+	max-width: 400px;
+	padding: 8px 0;
+	margin: 6px auto;
+	font-family: 'Ubuntu', sans-serif;
+	font-size: 0.8em;
+	display: block;
+}
+
+input[type="text"]::placeholder,
+input[type="password"]::placeholder
+{
+	color: var(--color-dark);
+	opacity: 0.6;
+}
+
+.buttons
+{
+	font-size: 0.9em;
+	border-radius: 25px;
+	border: none;
+	padding: 10px 20px;
+	margin: 10px auto;
+	font-family: 'Ubuntu', sans-serif;
+	cursor: pointer;
+	display: block;
+	background-color: var(--color-accent);
+	color: var(--color-light);
+	transition: opacity 0.15s ease;
+}
+
+.buttons:hover
+{
+	opacity: 0.75;
+}
+
+.buttons.small
+{
+	display: inline-block;
+	font-size: 0.7em;
+	padding: 4px 10px;
+	margin: 2px;
+}
+
+.switchText
+{
+	font-size: 0.6em;
+	margin-top: 10px;
+	color: var(--color-light);
+}
+
+.switchText a
+{
+	color: var(--color-light);
+	text-decoration: underline;
+}
+
+.switchText a:hover
+{
+	opacity: 0.75;
+}
+
+#loginResult,
+#registerResult,
+#addContactResult,
+#editContactResult,
+#searchResult
+{
+	display: inline-block;
+	font-size: 0.7em;
+	color: #e08a8a;
+	margin-top: 8px;
+}
+
+/* ---- contacts table ---- */
+#contactsTable
+{
+	width: 100%;
+	border-collapse: collapse;
+	background-color: var(--color-light);
+}
+
+#contactsTable th,
+#contactsTable td
+{
+	border: 1px solid var(--color-dark);
+	padding: 8px;
+	font-size: 0.7em;
+	text-align: left;
+	color: var(--color-darkest);
+}
+
+#contactsTable th
+{
+	background-color: var(--color-accent);
+	color: var(--color-light);
+}

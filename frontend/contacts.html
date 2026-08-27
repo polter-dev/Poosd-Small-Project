@@ -1,0 +1,70 @@
+<html>
+<head>
+	<title>My Contacts - Personal Contact Manager</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="css/styles.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+</head>
+<body onload="onContactsLoad();">
+
+<h1 id="title">My Contacts</h1>
+
+<div id="loggedInDiv">
+	<span id="userName"></span>
+	<button type="button" id="logoutButton" class="buttons" onclick="doLogout();">Log Out</button>
+</div>
+
+<!-- Server-side search: query is sent to the API on every keystroke/submit, -->
+<!-- results are never filtered from a locally cached contact list -->
+<div id="searchDiv">
+	<input type="text" id="searchText" placeholder="Search contacts..." oninput="searchContacts();" />
+	<span id="searchResult"></span>
+</div>
+
+<div id="addContactDiv">
+	<span id="inner-title">ADD A CONTACT</span>
+	<input type="text" id="addFirstName" placeholder="First Name" />
+	<input type="text" id="addLastName" placeholder="Last Name" />
+	<input type="text" id="addPhone" placeholder="Phone" />
+	<input type="text" id="addEmail" placeholder="Email" />
+	<button type="button" id="addContactButton" class="buttons" onclick="addContact();">Add Contact</button>
+	<span id="addContactResult"></span>
+</div>
+
+<div id="contactsListDiv">
+	<table id="contactsTable">
+		<thead>
+			<tr>
+				<th>First Name</th>
+				<th>Last Name</th>
+				<th>Phone</th>
+				<th>Email</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody id="contactsTableBody">
+			<!-- rows injected by js/contacts.js -> renderContacts() -->
+		</tbody>
+	</table>
+</div>
+
+<!-- Simple inline edit panel, shown/populated by editContact() in js/contacts.js -->
+<div id="editContactDiv" style="display:none;">
+	<span id="inner-title">EDIT CONTACT</span>
+	<input type="hidden" id="editContactId" />
+	<input type="text" id="editFirstName" placeholder="First Name" />
+	<input type="text" id="editLastName" placeholder="Last Name" />
+	<input type="text" id="editPhone" placeholder="Phone" />
+	<input type="text" id="editEmail" placeholder="Email" />
+	<button type="button" id="saveEditButton" class="buttons" onclick="saveEditContact();">Save Changes</button>
+	<button type="button" id="cancelEditButton" class="buttons" onclick="cancelEditContact();">Cancel</button>
+	<span id="editContactResult"></span>
+</div>
+
+<script type="text/javascript" src="js/config.js"></script>
+<script type="text/javascript" src="js/api.js"></script>
+<script type="text/javascript" src="js/auth.js"></script>
+<script type="text/javascript" src="js/contacts.js"></script>
+</body>
+</html>
