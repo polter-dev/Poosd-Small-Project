@@ -1,0 +1,86 @@
+# ---------------------------------------------------------------------------
+# Course / private context  (never commit — assignment PDF, instructor materials)
+# ---------------------------------------------------------------------------
+/context/
+
+# ---------------------------------------------------------------------------
+# AI agent workflow, context ledgers, plans, memory, scratch
+# ---------------------------------------------------------------------------
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.agents/
+.agent/
+.cursor/
+.cursorrules
+.cursorignore
+.windsurf/
+.windsurfrules
+.aider*
+.codex/
+.gemini/
+.copilot/
+.github/copilot-instructions.md
+.mcp.json
+mcp.json
+.plans/
+plans/
+.scratchpad/
+scratchpad/
+.memory/
+memory/
+*ledger*
+*.ledger
+*.ledger.md
+context-ledger*
+CONTEXT.md
+NOTES.md
+TODO.md
+*.transcript*
+*.session.json
+
+# ---------------------------------------------------------------------------
+# Secrets / server config  (API/config.example.php IS committed)
+# ---------------------------------------------------------------------------
+API/config.php
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+id_rsa*
+*.sql.gz
+*.dump
+
+# ---------------------------------------------------------------------------
+# OS / editor junk
+# ---------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+__MACOSX/
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------------
+# Logs, temp, build output, dependencies (none expected, but harmless)
+# ---------------------------------------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+node_modules/
+vendor/
+dist/
+build/
+.cache/
