@@ -1,9 +1,10 @@
-<html>
+<html lang="en">
 <head>
 	<title>My Contacts - Personal Contact Manager</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link href="css/styles.css" rel="stylesheet">
+	<link href="css/accessibility.css" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
 </head>
 <body onload="onContactsLoad();">
@@ -18,29 +19,30 @@
 <!-- Server-side search: query is sent to the API on every keystroke/submit, -->
 <!-- results are never filtered from a locally cached contact list -->
 <div id="searchDiv">
-	<input type="text" id="searchText" placeholder="Search contacts..." oninput="searchContacts();" />
-	<span id="searchResult"></span>
+	<input type="text" id="searchText" placeholder="Search contacts..." aria-label="Search contacts" oninput="searchContacts();" />
+	<span id="searchResult" aria-live="polite"></span>
 </div>
 
 <div id="addContactDiv">
 	<span id="inner-title">ADD A CONTACT</span>
-	<input type="text" id="addFirstName" placeholder="First Name" />
-	<input type="text" id="addLastName" placeholder="Last Name" />
-	<input type="text" id="addPhone" placeholder="Phone" />
-	<input type="text" id="addEmail" placeholder="Email" />
+	<input type="text" id="addFirstName" placeholder="First Name" aria-label="First Name" />
+	<input type="text" id="addLastName" placeholder="Last Name" aria-label="Last Name" />
+	<input type="text" id="addPhone" placeholder="Phone" aria-label="Phone" />
+	<input type="text" id="addEmail" placeholder="Email" aria-label="Email" />
 	<button type="button" id="addContactButton" class="buttons" onclick="addContact();">Add Contact</button>
-	<span id="addContactResult"></span>
+	<span id="addContactResult" aria-live="polite"></span>
 </div>
 
 <div id="contactsListDiv">
 	<table id="contactsTable">
+		<caption class="visually-hidden">Your contacts</caption>
 		<thead>
 			<tr>
-				<th>First Name</th>
-				<th>Last Name</th>
-				<th>Phone</th>
-				<th>Email</th>
-				<th>Actions</th>
+				<th scope="col">First Name</th>
+				<th scope="col">Last Name</th>
+				<th scope="col">Phone</th>
+				<th scope="col">Email</th>
+				<th scope="col">Actions</th>
 			</tr>
 		</thead>
 		<tbody id="contactsTableBody">
@@ -53,18 +55,19 @@
 <div id="editContactDiv" style="display:none;">
 	<span id="inner-title">EDIT CONTACT</span>
 	<input type="hidden" id="editContactId" />
-	<input type="text" id="editFirstName" placeholder="First Name" />
-	<input type="text" id="editLastName" placeholder="Last Name" />
-	<input type="text" id="editPhone" placeholder="Phone" />
-	<input type="text" id="editEmail" placeholder="Email" />
+	<input type="text" id="editFirstName" placeholder="First Name" aria-label="First Name" />
+	<input type="text" id="editLastName" placeholder="Last Name" aria-label="Last Name" />
+	<input type="text" id="editPhone" placeholder="Phone" aria-label="Phone" />
+	<input type="text" id="editEmail" placeholder="Email" aria-label="Email" />
 	<button type="button" id="saveEditButton" class="buttons" onclick="saveEditContact();">Save Changes</button>
 	<button type="button" id="cancelEditButton" class="buttons" onclick="cancelEditContact();">Cancel</button>
-	<span id="editContactResult"></span>
+	<span id="editContactResult" aria-live="polite"></span>
 </div>
 
 <script type="text/javascript" src="js/config.js"></script>
 <script type="text/javascript" src="js/api.js"></script>
 <script type="text/javascript" src="js/auth.js"></script>
 <script type="text/javascript" src="js/contacts.js"></script>
+<script type="text/javascript" src="js/accessibility.js"></script>
 </body>
 </html>

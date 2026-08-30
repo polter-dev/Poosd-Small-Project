@@ -3,7 +3,9 @@
 	/* https://colorhunt.co/palette/37353e44444e715a5ad3dad9 */
 	--color-darkest: #37353E;
 	--color-dark: #44444E;
-	--color-accent: #715A5A;
+	/* darkened from #715A5A so light text on it (buttons, table header) clears */
+	/* the WCAG AA 4.5:1 text-contrast minimum (was 4.47:1, now 4.92:1) */
+	--color-accent: #6a5454;
 	--color-light: #D3DAD9;
 }
 
@@ -150,7 +152,9 @@ input[type="password"]::placeholder
 {
 	display: inline-block;
 	font-size: 0.7em;
-	color: #e08a8a;
+	/* lightened from #e08a8a so text on the dark panel clears WCAG AA 4.5:1 */
+	/* (was 3.74:1, now 4.80:1) */
+	color: #f0a3a3;
 	margin-top: 8px;
 }
 

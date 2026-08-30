@@ -1,9 +1,10 @@
-<html>
+<html lang="en">
 <head>
 	<title>Personal Contact Manager</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link href="css/styles.css" rel="stylesheet">
+	<link href="css/accessibility.css" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
 </head>
 <body onload="onIndexLoad();">
@@ -14,10 +15,10 @@
 
 <div id="loginDiv">
 	<span id="inner-title">PLEASE LOG IN</span>
-	<input type="text" id="loginUsername" placeholder="Username" /><br />
-	<input type="password" id="loginPassword" placeholder="Password" /><br />
+	<input type="text" id="loginUsername" placeholder="Username" aria-label="Username" /><br />
+	<input type="password" id="loginPassword" placeholder="Password" aria-label="Password" /><br />
 	<button type="button" id="loginButton" class="buttons" onclick="doLogin();">Log In</button>
-	<span id="loginResult"></span>
+	<span id="loginResult" aria-live="polite"></span>
 
 	<p class="switchText">
 		Don't have an account?
@@ -27,13 +28,13 @@
 
 <div id="registerDiv" style="display:none;">
 	<span id="inner-title">CREATE AN ACCOUNT</span>
-	<input type="text" id="registerFirstName" placeholder="First Name" /><br />
-	<input type="text" id="registerLastName" placeholder="Last Name" /><br />
-	<input type="text" id="registerUsername" placeholder="Username" /><br />
-	<input type="password" id="registerPassword" placeholder="Password" /><br />
-	<input type="password" id="registerConfirmPassword" placeholder="Confirm Password" /><br />
+	<input type="text" id="registerFirstName" placeholder="First Name" aria-label="First Name" /><br />
+	<input type="text" id="registerLastName" placeholder="Last Name" aria-label="Last Name" /><br />
+	<input type="text" id="registerUsername" placeholder="Username" aria-label="Username" /><br />
+	<input type="password" id="registerPassword" placeholder="Password" aria-label="Password" /><br />
+	<input type="password" id="registerConfirmPassword" placeholder="Confirm Password" aria-label="Confirm Password" /><br />
 	<button type="button" id="registerButton" class="buttons" onclick="doRegister();">Sign Up</button>
-	<span id="registerResult"></span>
+	<span id="registerResult" aria-live="polite"></span>
 
 	<p class="switchText">
 		Already have an account?
@@ -44,5 +45,6 @@
 <script type="text/javascript" src="js/config.js"></script>
 <script type="text/javascript" src="js/api.js"></script>
 <script type="text/javascript" src="js/auth.js"></script>
+<script type="text/javascript" src="js/accessibility.js"></script>
 </body>
 </html>
