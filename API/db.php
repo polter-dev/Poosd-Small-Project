@@ -10,15 +10,56 @@
  * would have to be made in five places), we write it ONCE here and each
  * endpoint just does:
  *
- *     require_once __DIR__ . '/db.php';
+ *     require_once 'db.php';
  *
- * __DIR__ means "the folder this file is in", so the include works no matter
- * what folder the web server thinks it is running from.
+ * PHP looks in the folder of the file doing the including, so that works for
+ * every endpoint because they all sit next to this file in API/.
  */
 
 // Pulls in DB_HOST, DB_USER, DB_PASS, DB_NAME. This is the git-ignored file
 // with the real credentials, created by copying config.example.php.
 require_once __DIR__ . '/config.php';
+
+/*
+ * From PHP 8.1 onward, mysqli reports problems by THROWING an exception rather
+ * than by returning false. We set that mode explicitly so this code behaves the
+ * same way on every server instead of depending on the PHP version.
+ *
+ * The catch is that an exception nobody catches makes PHP print an HTML error
+ * page -- which usually includes the database user name and the failing query.
+ * That is both a leak and unreadable to our frontend, which only ever calls
+ * JSON.parse() on the response. So we turn the printed errors off and install
+ * one handler that answers with ordinary JSON instead.
+ */
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+ini_set('display_errors', '0');
+
+set_exception_handler(function ($e) {
+    // The real reason is written to the server log for us to read; the browser
+    // only gets a generic message, so we never hand an attacker the details.
+    error_log('API error: ' . $e->getMessage());
+    returnWithError('Server error, please try again');
+    exit();
+});
+
+/*
+ * Safely pulls one text field out of the decoded request body.
+ *
+ * The body is whatever the client chose to send, so a field we expect to be a
+ * string can arrive as a number, a list, or not at all. Handing a list to
+ * trim() is a fatal error in PHP 8, which would crash the endpoint and return
+ * an HTML error page instead of JSON. Anything that is not a string is treated
+ * as "not filled in", and the endpoint's own empty-field check then rejects it
+ * with a normal error message.
+ */
+function getTextField($data, $key)
+{
+    if (!isset($data[$key]) || !is_string($data[$key])) {
+        return '';
+    }
+
+    return trim($data[$key]);
+}
 
 /*
  * Opens the connection to the MySQL database and hands it back.
@@ -31,12 +72,10 @@ require_once __DIR__ . '/config.php';
  */
 function getDbConnection()
 {
+    // Because of the mysqli_report() setting above, a bad host or password
+    // throws instead of returning a broken connection. The exception handler
+    // turns that into a JSON error for us, so there is no error check here.
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-
-    if ($conn->connect_error) {
-        returnWithError('Database connection failed');
-        exit();
-    }
 
     // utf8mb4 lets names and emails contain accents, emoji, and other
     // non-English characters without turning into garbage.

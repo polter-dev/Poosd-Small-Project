@@ -12,13 +12,16 @@ require_once 'db.php';
 
 $in = getRequestInfo();
 
-// The database column is called "Login", but the front end sends "username".
-// We just line the two names up here.
-$username = trim($in['username'] ?? '');
+// The database column is called "Login", but the front end sends "username";
+// we just line the two names up here. getTextField() (in db.php) trims the
+// value and returns "" if the client sent the wrong type or nothing at all, so
+// an odd request cannot crash this script.
+$username = getTextField($in, 'username');
+
 // Register.php trims the password before hashing it, so we have to trim the
 // same way here. Otherwise someone who signed up with " secret " would have
 // the hash of "secret" stored, and their login would never match.
-$password = trim($in['password'] ?? '');
+$password = getTextField($in, 'password');
 
 $conn = getDbConnection();
 

@@ -14,13 +14,14 @@ require_once 'db.php';
 // getRequestInfo() hands us the JSON body already decoded into a PHP array.
 $in = getRequestInfo();
 
-// Pull the four fields out. The "??" gives us an empty string if the front end
-// left a key out entirely, so we never touch an undefined array index.
-// trim() strips leading/trailing spaces so " " does not count as a real name.
-$firstName = trim($in['firstName'] ?? '');
-$lastName  = trim($in['lastName']  ?? '');
-$username  = trim($in['username']  ?? '');
-$password  = trim($in['password']  ?? '');
+// Pull the four fields out. getTextField() (in db.php) trims the spaces off
+// each value and gives back "" for anything the client left out or sent as the
+// wrong type, so a request like {"firstName":[1,2]} is rejected politely below
+// instead of crashing the script.
+$firstName = getTextField($in, 'firstName');
+$lastName  = getTextField($in, 'lastName');
+$username  = getTextField($in, 'username');
+$password  = getTextField($in, 'password');
 
 // Step 1: basic validation. If anything is blank we stop right here and never
 // touch the database, so we cannot create a half-empty user row.
@@ -34,9 +35,22 @@ if ($firstName === '' || $lastName === '' || $username === '' || $password === '
     exit();
 }
 
+// Step 2: the name columns hold 50 characters. Checking the length here means
+// an over-long name comes back as a readable message, instead of MySQL
+// rejecting the row and the user seeing a generic failure.
+if (mb_strlen($firstName) > 50 || mb_strlen($lastName) > 50 || mb_strlen($username) > 50) {
+    sendResultInfoAsJson([
+        'id'        => 0,
+        'firstName' => '',
+        'lastName'  => '',
+        'error'     => 'First name, last name, and username must be 50 characters or fewer'
+    ]);
+    exit();
+}
+
 $conn = getDbConnection();
 
-// Step 2: make sure this username is not already in use.
+// Step 3: make sure this username is not already in use.
 //
 // Note the "?" placeholder below. This is a PREPARED STATEMENT: we send the SQL
 // and the user's data to MySQL separately, so MySQL treats the data purely as a
@@ -65,7 +79,7 @@ if ($result->fetch_assoc()) {
 
 $stmt->close();
 
-// Step 3: hash the password before it ever goes into the database.
+// Step 4: hash the password before it ever goes into the database.
 //
 // We never store the plain password, and we do NOT use md5/sha1 either. Those
 // are fast, which is exactly what an attacker wants when guessing billions of
@@ -74,16 +88,23 @@ $stmt->close();
 // happens later in Login.php with password_verify().
 $hash = password_hash($password, PASSWORD_DEFAULT);
 
-// Step 4: insert the new user. Four "?" placeholders, so four "s" characters
+// Step 5: insert the new user. Four "?" placeholders, so four "s" characters
 // in bind_param -- one type letter per placeholder, all strings here.
 $stmt = $conn->prepare("INSERT INTO Users (FirstName, LastName, Login, Password) VALUES (?, ?, ?, ?)");
 $stmt->bind_param("ssss", $firstName, $lastName, $username, $hash);
 
 // The Login column is UNIQUE in the database, so the INSERT can still fail even
 // though we checked for a duplicate a moment ago -- two people could register
-// the same name at almost the same instant. Checking here means we report a
-// real message instead of quietly answering with id 0 and no error.
-if (!$stmt->execute()) {
+// the same name at almost the same instant. MySQL reports that clash as error
+// number 1062, and we turn it into the same friendly message. Any other
+// database problem is re-thrown and handled by db.php.
+try {
+    $stmt->execute();
+} catch (mysqli_sql_exception $e) {
+    if ($e->getCode() !== 1062) {
+        throw $e;
+    }
+
     $stmt->close();
     $conn->close();
 
@@ -103,7 +124,7 @@ $newId = (int)$conn->insert_id;
 $stmt->close();
 $conn->close();
 
-// Step 5: success. Note the password/hash is never part of the response.
+// Step 6: success. Note the password/hash is never part of the response.
 sendResultInfoAsJson([
     'id'        => $newId,
     'firstName' => $firstName,

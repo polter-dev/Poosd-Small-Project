@@ -7,7 +7,9 @@
 -- WARNING: the DROP TABLE lines below delete existing data. That is fine while
 -- we are setting up, but do not re-run this on a database you care about.
 
-CREATE DATABASE IF NOT EXISTS ContactManager;
+CREATE DATABASE IF NOT EXISTS ContactManager
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 USE ContactManager;
 
 -- Drop Contacts first: it has a foreign key pointing at Users, so MySQL will
