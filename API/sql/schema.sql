@@ -21,6 +21,10 @@ CREATE TABLE Users (
   ID        INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   FirstName VARCHAR(50)  NOT NULL,
   LastName  VARCHAR(50)  NOT NULL,
+  -- The database's utf8mb4_unicode_ci collation makes username comparison
+  -- case-INsensitive, and we keep that on purpose: "Alice" and "alice" are the
+  -- same account, both for this UNIQUE constraint and for the login lookup.
+  -- It prevents two visually identical usernames from being different accounts.
   Login     VARCHAR(50)  NOT NULL UNIQUE,
   Password  VARCHAR(255) NOT NULL   -- output of PHP password_hash()
 ) ENGINE=InnoDB;

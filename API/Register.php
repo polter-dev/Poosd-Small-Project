@@ -26,26 +26,25 @@ $password  = getTextField($in, 'password');
 // Step 1: basic validation. If anything is blank we stop right here and never
 // touch the database, so we cannot create a half-empty user row.
 if ($firstName === '' || $lastName === '' || $username === '' || $password === '') {
-    sendResultInfoAsJson([
-        'id'        => 0,
-        'firstName' => '',
-        'lastName'  => '',
-        'error'     => 'All fields are required'
-    ]);
-    exit();
+    returnWithAuthError('All fields are required');
 }
 
 // Step 2: the name columns hold 50 characters. Checking the length here means
 // an over-long name comes back as a readable message, instead of MySQL
 // rejecting the row and the user seeing a generic failure.
 if (mb_strlen($firstName) > 50 || mb_strlen($lastName) > 50 || mb_strlen($username) > 50) {
-    sendResultInfoAsJson([
-        'id'        => 0,
-        'firstName' => '',
-        'lastName'  => '',
-        'error'     => 'First name, last name, and username must be 50 characters or fewer'
-    ]);
-    exit();
+    returnWithAuthError('First name, last name, and username must be 50 characters or fewer');
+}
+
+// Step 2b: bcrypt (the algorithm behind PASSWORD_DEFAULT) only looks at the
+// first 72 BYTES of a password. Older PHP silently ignores everything past
+// that -- the user thinks their long passphrase counts, but only its start
+// does -- and PHP 8.4+ throws instead, which would surface as a generic
+// "Server error". Rejecting long passwords up front gives an honest message
+// either way. strlen() (bytes, not characters) is deliberate: that is the
+// limit bcrypt actually enforces.
+if (strlen($password) > 72) {
+    returnWithAuthError('Password must be 72 characters or fewer');
 }
 
 $conn = getDbConnection();
@@ -64,17 +63,13 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->fetch_assoc()) {
-    // Somebody already owns this login name.
+    // Somebody already owns this login name. Note the match is
+    // case-INsensitive on purpose (the table's utf8mb4_unicode_ci collation):
+    // "Alice" and "alice" are the same username, both here and at login.
     $stmt->close();
     $conn->close();
 
-    sendResultInfoAsJson([
-        'id'        => 0,
-        'firstName' => '',
-        'lastName'  => '',
-        'error'     => 'Username already taken'
-    ]);
-    exit();
+    returnWithAuthError('Username already taken');
 }
 
 $stmt->close();
@@ -108,13 +103,7 @@ try {
     $stmt->close();
     $conn->close();
 
-    sendResultInfoAsJson([
-        'id'        => 0,
-        'firstName' => '',
-        'lastName'  => '',
-        'error'     => 'Username already taken'
-    ]);
-    exit();
+    returnWithAuthError('Username already taken');
 }
 
 // insert_id is the auto-increment ID MySQL just handed the new row.

@@ -46,13 +46,7 @@ $conn->close();
 // attacker could feed us a list of names and learn which accounts really exist,
 // then focus their password guessing on those. Staying vague gives that away.
 if ($row === null || !password_verify($password, $row['Password'])) {
-    sendResultInfoAsJson([
-        'id'        => 0,
-        'firstName' => '',
-        'lastName'  => '',
-        'error'     => 'Username/password combination incorrect'
-    ]);
-    exit();
+    returnWithAuthError('Username/password combination incorrect');
 }
 
 // Success. We deliberately send back only the id and the display name --

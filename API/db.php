@@ -126,3 +126,23 @@ function returnWithError($err)
 {
     sendResultInfoAsJson(['error' => $err]);
 }
+
+/*
+ * Failure response in the exact shape Register.php and Login.php promise:
+ * { "id": 0, "firstName": "", "lastName": "", "error": <message> }.
+ *
+ * Both endpoints answer every failure with this same shape, so it lives here
+ * once instead of being copy-pasted into each failure path where the copies
+ * could drift apart. Ends the request: callers must close any open statement
+ * and connection BEFORE calling this.
+ */
+function returnWithAuthError($err)
+{
+    sendResultInfoAsJson([
+        'id'        => 0,
+        'firstName' => '',
+        'lastName'  => '',
+        'error'     => $err
+    ]);
+    exit();
+}
