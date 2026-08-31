@@ -28,7 +28,7 @@ function doLogin()
 	let username = document.getElementById("loginUsername").value;
 	let password = document.getElementById("loginPassword").value;
 	let resultSpan = document.getElementById("loginResult");
-	resultSpan.innerHTML = "";
+	resultSpan.textContent = "";
 
 	// TODO: hash password client-side (e.g. with a bundled md5/sha256 lib) to
 	// match whatever the backend expects before comparing against the DB.
@@ -38,7 +38,7 @@ function doLogin()
 	{
 		if (!response.id || response.id < 1)
 		{
-			resultSpan.innerHTML = response.error || "Username/password combination incorrect";
+			resultSpan.textContent = response.error || "Username/password combination incorrect";
 			return;
 		}
 
@@ -47,7 +47,7 @@ function doLogin()
 	},
 	function(errorMessage)
 	{
-		resultSpan.innerHTML = errorMessage;
+		resultSpan.textContent = errorMessage;
 	});
 }
 
@@ -59,11 +59,11 @@ function doRegister()
 	let password = document.getElementById("registerPassword").value;
 	let confirmPassword = document.getElementById("registerConfirmPassword").value;
 	let resultSpan = document.getElementById("registerResult");
-	resultSpan.innerHTML = "";
+	resultSpan.textContent = "";
 
 	if (password !== confirmPassword)
 	{
-		resultSpan.innerHTML = "Passwords do not match";
+		resultSpan.textContent = "Passwords do not match";
 		return;
 	}
 
@@ -78,7 +78,7 @@ function doRegister()
 	{
 		if (!response.id || response.id < 1)
 		{
-			resultSpan.innerHTML = response.error || "Could not create account";
+			resultSpan.textContent = response.error || "Could not create account";
 			return;
 		}
 
@@ -87,7 +87,7 @@ function doRegister()
 	},
 	function(errorMessage)
 	{
-		resultSpan.innerHTML = errorMessage;
+		resultSpan.textContent = errorMessage;
 	});
 }
 

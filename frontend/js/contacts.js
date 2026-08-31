@@ -26,18 +26,18 @@ function searchContacts()
 	{
 		let searchTerm = document.getElementById("searchText").value;
 		let resultSpan = document.getElementById("searchResult");
-		resultSpan.innerHTML = "Searching...";
+		resultSpan.textContent = "Searching...";
 
 		let payload = { userId: currentSession.userId, search: searchTerm };
 
 		callApi("SearchContacts", payload, function(response)
 		{
-			resultSpan.innerHTML = "";
+			resultSpan.textContent = "";
 			renderContacts(response.results || []);
 		},
 		function(errorMessage)
 		{
-			resultSpan.innerHTML = errorMessage;
+			resultSpan.textContent = errorMessage;
 		});
 	}, 250); // small debounce so we're not hitting the API on every keystroke
 }
@@ -111,7 +111,7 @@ function renderContacts(contacts)
 function addContact()
 {
 	let resultSpan = document.getElementById("addContactResult");
-	resultSpan.innerHTML = "";
+	resultSpan.textContent = "";
 
 	let payload = {
 		userId: currentSession.userId,
@@ -125,11 +125,11 @@ function addContact()
 	{
 		if (!response.id || response.id < 1)
 		{
-			resultSpan.innerHTML = response.error || "Could not add contact";
+			resultSpan.textContent = response.error || "Could not add contact";
 			return;
 		}
 
-		resultSpan.innerHTML = "Contact added";
+		resultSpan.textContent = "Contact added";
 		document.getElementById("addFirstName").value = "";
 		document.getElementById("addLastName").value = "";
 		document.getElementById("addPhone").value = "";
@@ -139,7 +139,7 @@ function addContact()
 	},
 	function(errorMessage)
 	{
-		resultSpan.innerHTML = errorMessage;
+		resultSpan.textContent = errorMessage;
 	});
 }
 
@@ -168,7 +168,7 @@ function editContact(contactId, buttonEl)
 function cancelEditContact()
 {
 	document.getElementById("editContactDiv").style.display = "none";
-	document.getElementById("editContactResult").innerHTML = "";
+	document.getElementById("editContactResult").textContent = "";
 
 	if (editReturnFocusEl)
 	{
@@ -180,7 +180,7 @@ function cancelEditContact()
 function saveEditContact()
 {
 	let resultSpan = document.getElementById("editContactResult");
-	resultSpan.innerHTML = "";
+	resultSpan.textContent = "";
 
 	let payload = {
 		userId: currentSession.userId,
@@ -195,7 +195,7 @@ function saveEditContact()
 	{
 		if (response.error)
 		{
-			resultSpan.innerHTML = response.error;
+			resultSpan.textContent = response.error;
 			return;
 		}
 
@@ -209,7 +209,7 @@ function saveEditContact()
 	},
 	function(errorMessage)
 	{
-		resultSpan.innerHTML = errorMessage;
+		resultSpan.textContent = errorMessage;
 	});
 }
 
