@@ -26,20 +26,30 @@ function searchContacts()
 	{
 		let searchTerm = document.getElementById("searchText").value;
 		let resultSpan = document.getElementById("searchResult");
-		resultSpan.innerHTML = "Searching...";
+		resultSpan.textContent = "Searching...";
 
 		let payload = { userId: currentSession.userId, search: searchTerm };
 
 		callApi("SearchContacts", payload, function(response)
 		{
-			resultSpan.innerHTML = "";
-			renderContacts(response.results || []);
+			let results = response.results || [];
+			resultSpan.textContent = results.length === 0 ? "No contacts found" : "";
+			renderContacts(results);
 		},
 		function(errorMessage)
 		{
-			resultSpan.innerHTML = errorMessage;
+			resultSpan.textContent = errorMessage;
 		});
 	}, 250); // small debounce so we're not hitting the API on every keystroke
+}
+
+// Appends a <td> holding `text` as literal text -- never HTML -- so a contact
+// field can never inject markup into the page (see issue #82).
+function appendTextCell(row, text)
+{
+	let cell = document.createElement("td");
+	cell.textContent = text;
+	row.appendChild(cell);
 }
 
 function renderContacts(contacts)
@@ -52,30 +62,77 @@ function renderContacts(contacts)
 		let contact = contacts[i];
 		let row = document.createElement("tr");
 
+		appendTextCell(row, contact.firstName);
+		appendTextCell(row, contact.lastName);
+		appendTextCell(row, contact.phone);
+		appendTextCell(row, contact.email);
+
+		// Built with createElement/textContent/setAttribute rather than an
+		// innerHTML string -- a contact named `<b>x</b>` or containing a `"`
+		// used to inject markup or break out of the aria-label attribute
+		// (issue #82). None of these APIs parse their input as HTML, so
+		// arbitrary contact text is always treated as literal text/attribute
+		// value, never as markup.
+		let actionsCell = document.createElement("td");
+
 		// Distinct aria-labels per row -- otherwise a screen reader user
 		// tabbing through the table hears "Edit... Edit... Edit..." with no
 		// way to tell which contact's button they're on.
 		let fullName = contact.firstName + " " + contact.lastName;
 
-		row.innerHTML =
-			"<td>" + contact.firstName + "</td>" +
-			"<td>" + contact.lastName + "</td>" +
-			"<td>" + contact.phone + "</td>" +
-			"<td>" + contact.email + "</td>" +
-			"<td>" +
-				"<button type=\"button\" class=\"buttons small\" aria-label=\"Edit " + fullName + "\" onclick=\"editContact(" + contact.id + ", this)\">Edit</button>" +
-				"<button type=\"button\" class=\"buttons small\" aria-label=\"Delete " + fullName + "\" onclick=\"deleteContact(" + contact.id + ")\">Delete</button>" +
-			"</td>";
+		let editButton = document.createElement("button");
+		editButton.type = "button";
+		editButton.className = "buttons small";
+		editButton.textContent = "Edit";
+		editButton.setAttribute("aria-label", "Edit " + fullName);
+		editButton.addEventListener("click", function()
+		{
+			editContact(contact.id, editButton);
+		});
+
+		let deleteButton = document.createElement("button");
+		deleteButton.type = "button";
+		deleteButton.className = "buttons small";
+		deleteButton.textContent = "Delete";
+		deleteButton.setAttribute("aria-label", "Delete " + fullName);
+		deleteButton.addEventListener("click", function()
+		{
+			deleteContact(contact.id);
+		});
+
+		actionsCell.appendChild(editButton);
+		actionsCell.appendChild(deleteButton);
+		row.appendChild(actionsCell);
 
 		row.dataset.contact = JSON.stringify(contact);
 		tbody.appendChild(row);
 	}
+
+	updateTableScrollHint();
 }
+
+// Shows "Scroll to see more" only when the table is actually wider than its
+// scrollable container. A fixed pixel breakpoint can't do this correctly --
+// whether the table overflows depends on the real contact data (long names/
+// emails), not the viewport width alone, so this re-measures on every render.
+function updateTableScrollHint()
+{
+	let container = document.getElementById("contactsListDiv");
+	let hint = document.getElementById("tableScrollHint");
+	if (!container || !hint)
+	{
+		return;
+	}
+
+	hint.classList.toggle("hidden", container.scrollWidth <= container.clientWidth);
+}
+
+window.addEventListener("resize", updateTableScrollHint);
 
 function addContact()
 {
 	let resultSpan = document.getElementById("addContactResult");
-	resultSpan.innerHTML = "";
+	resultSpan.textContent = "";
 
 	let payload = {
 		userId: currentSession.userId,
@@ -89,11 +146,11 @@ function addContact()
 	{
 		if (!response.id || response.id < 1)
 		{
-			resultSpan.innerHTML = response.error || "Could not add contact";
+			resultSpan.textContent = response.error || "Could not add contact";
 			return;
 		}
 
-		resultSpan.innerHTML = "Contact added";
+		resultSpan.textContent = "Contact added";
 		document.getElementById("addFirstName").value = "";
 		document.getElementById("addLastName").value = "";
 		document.getElementById("addPhone").value = "";
@@ -103,7 +160,7 @@ function addContact()
 	},
 	function(errorMessage)
 	{
-		resultSpan.innerHTML = errorMessage;
+		resultSpan.textContent = errorMessage;
 	});
 }
 
@@ -120,9 +177,9 @@ function editContact(contactId, buttonEl)
 	document.getElementById("editPhone").value = contact.phone;
 	document.getElementById("editEmail").value = contact.email;
 
-	document.getElementById("editContactDiv").style.display = "block";
+	document.getElementById("editContactDiv").classList.remove("hidden");
 
-	// The panel is just a display:none/block toggle, so without an explicit
+	// The panel is just a hidden-class toggle, so without an explicit
 	// focus move a keyboard/screen-reader user has no indication it opened.
 	// Remember what had focus so Cancel/Save can put it back afterward.
 	editReturnFocusEl = buttonEl;
@@ -131,8 +188,8 @@ function editContact(contactId, buttonEl)
 
 function cancelEditContact()
 {
-	document.getElementById("editContactDiv").style.display = "none";
-	document.getElementById("editContactResult").innerHTML = "";
+	document.getElementById("editContactDiv").classList.add("hidden");
+	document.getElementById("editContactResult").textContent = "";
 
 	if (editReturnFocusEl)
 	{
@@ -144,7 +201,7 @@ function cancelEditContact()
 function saveEditContact()
 {
 	let resultSpan = document.getElementById("editContactResult");
-	resultSpan.innerHTML = "";
+	resultSpan.textContent = "";
 
 	let payload = {
 		userId: currentSession.userId,
@@ -159,7 +216,7 @@ function saveEditContact()
 	{
 		if (response.error)
 		{
-			resultSpan.innerHTML = response.error;
+			resultSpan.textContent = response.error;
 			return;
 		}
 
@@ -173,7 +230,7 @@ function saveEditContact()
 	},
 	function(errorMessage)
 	{
-		resultSpan.innerHTML = errorMessage;
+		resultSpan.textContent = errorMessage;
 	});
 }
 

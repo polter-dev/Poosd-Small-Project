@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
 	<title>Personal Contact Manager</title>
@@ -15,10 +16,14 @@
 
 <div id="loginDiv">
 	<span id="inner-title">PLEASE LOG IN</span>
-	<input type="text" id="loginUsername" placeholder="Username" aria-label="Username" /><br />
-	<input type="password" id="loginPassword" placeholder="Password" aria-label="Password" /><br />
-	<button type="button" id="loginButton" class="buttons" onclick="doLogin();">Log In</button>
-	<span id="loginResult" aria-live="polite"></span>
+	<form id="loginForm" onsubmit="doLogin(); return false;">
+		<label for="loginUsername" class="visually-hidden">Username</label>
+		<input type="text" id="loginUsername" placeholder="Username" /><br />
+		<label for="loginPassword" class="visually-hidden">Password</label>
+		<input type="password" id="loginPassword" placeholder="Password" /><br />
+		<button type="submit" id="loginButton" class="buttons">Log In</button>
+		<span id="loginResult" aria-live="polite"></span>
+	</form>
 
 	<p class="switchText">
 		Don't have an account?
@@ -28,13 +33,20 @@
 
 <div id="registerDiv" style="display:none;">
 	<span id="inner-title">CREATE AN ACCOUNT</span>
-	<input type="text" id="registerFirstName" placeholder="First Name" aria-label="First Name" /><br />
-	<input type="text" id="registerLastName" placeholder="Last Name" aria-label="Last Name" /><br />
-	<input type="text" id="registerUsername" placeholder="Username" aria-label="Username" /><br />
-	<input type="password" id="registerPassword" placeholder="Password" aria-label="Password" /><br />
-	<input type="password" id="registerConfirmPassword" placeholder="Confirm Password" aria-label="Confirm Password" /><br />
-	<button type="button" id="registerButton" class="buttons" onclick="doRegister();">Sign Up</button>
-	<span id="registerResult" aria-live="polite"></span>
+	<form id="registerForm" onsubmit="doRegister(); return false;">
+		<label for="registerFirstName" class="visually-hidden">First Name</label>
+		<input type="text" id="registerFirstName" placeholder="First Name" /><br />
+		<label for="registerLastName" class="visually-hidden">Last Name</label>
+		<input type="text" id="registerLastName" placeholder="Last Name" /><br />
+		<label for="registerUsername" class="visually-hidden">Username</label>
+		<input type="text" id="registerUsername" placeholder="Username" /><br />
+		<label for="registerPassword" class="visually-hidden">Password</label>
+		<input type="password" id="registerPassword" placeholder="Password" /><br />
+		<label for="registerConfirmPassword" class="visually-hidden">Confirm Password</label>
+		<input type="password" id="registerConfirmPassword" placeholder="Confirm Password" /><br />
+		<button type="submit" id="registerButton" class="buttons">Sign Up</button>
+		<span id="registerResult" aria-live="polite"></span>
+	</form>
 
 	<p class="switchText">
 		Already have an account?
