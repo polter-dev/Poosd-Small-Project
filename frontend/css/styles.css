@@ -201,6 +201,20 @@ input[type="email"]:focus-visible,
 	overflow-x: auto;
 }
 
+/* Toggled by updateTableScrollHint() in js/contacts.js -- only shown when */
+/* the table is actually wider than #contactsListDiv's visible width */
+#tableScrollHint
+{
+	width: 70%;
+	max-width: 800px;
+	margin: -10px auto 15px auto;
+	font-size: 0.6em;
+	color: var(--color-light);
+	opacity: 0.7;
+	text-align: right;
+	box-sizing: border-box;
+}
+
 #contactsTable
 {
 	width: 100%;
@@ -233,7 +247,8 @@ input[type="email"]:focus-visible,
 	#editContactDiv,
 	#searchDiv,
 	#contactsListDiv,
-	#loggedInDiv
+	#loggedInDiv,
+	#tableScrollHint
 	{
 		width: 92%;
 	}

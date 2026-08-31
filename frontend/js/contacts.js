@@ -107,7 +107,27 @@ function renderContacts(contacts)
 		row.dataset.contact = JSON.stringify(contact);
 		tbody.appendChild(row);
 	}
+
+	updateTableScrollHint();
 }
+
+// Shows "Scroll to see more" only when the table is actually wider than its
+// scrollable container. A fixed pixel breakpoint can't do this correctly --
+// whether the table overflows depends on the real contact data (long names/
+// emails), not the viewport width alone, so this re-measures on every render.
+function updateTableScrollHint()
+{
+	let container = document.getElementById("contactsListDiv");
+	let hint = document.getElementById("tableScrollHint");
+	if (!container || !hint)
+	{
+		return;
+	}
+
+	hint.classList.toggle("hidden", container.scrollWidth <= container.clientWidth);
+}
+
+window.addEventListener("resize", updateTableScrollHint);
 
 function addContact()
 {
