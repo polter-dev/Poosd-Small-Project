@@ -1,3 +1,7 @@
+// Every endpoint this calls (request/response shape, expected behavior) is
+// spec'd in docs/api-contract.md -- check there before wiring up a new call
+// or building the PHP side of one.
+//
 // TODO: point this at the deployed API once it's hosted, e.g. "https://api.yourdomain.com/API"
 const urlBase = 'http://localhost/API';
 const extension = 'php';

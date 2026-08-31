@@ -52,14 +52,19 @@ function renderContacts(contacts)
 		let contact = contacts[i];
 		let row = document.createElement("tr");
 
+		// Distinct aria-labels per row -- otherwise a screen reader user
+		// tabbing through the table hears "Edit... Edit... Edit..." with no
+		// way to tell which contact's button they're on.
+		let fullName = contact.firstName + " " + contact.lastName;
+
 		row.innerHTML =
 			"<td>" + contact.firstName + "</td>" +
 			"<td>" + contact.lastName + "</td>" +
 			"<td>" + contact.phone + "</td>" +
 			"<td>" + contact.email + "</td>" +
 			"<td>" +
-				"<button type=\"button\" class=\"buttons small\" onclick=\"editContact(" + contact.id + ", this)\">Edit</button>" +
-				"<button type=\"button\" class=\"buttons small\" onclick=\"deleteContact(" + contact.id + ")\">Delete</button>" +
+				"<button type=\"button\" class=\"buttons small\" aria-label=\"Edit " + fullName + "\" onclick=\"editContact(" + contact.id + ", this)\">Edit</button>" +
+				"<button type=\"button\" class=\"buttons small\" aria-label=\"Delete " + fullName + "\" onclick=\"deleteContact(" + contact.id + ")\">Delete</button>" +
 			"</td>";
 
 		row.dataset.contact = JSON.stringify(contact);
@@ -102,6 +107,8 @@ function addContact()
 	});
 }
 
+let editReturnFocusEl = null;
+
 function editContact(contactId, buttonEl)
 {
 	let row = buttonEl.closest("tr");
@@ -114,12 +121,24 @@ function editContact(contactId, buttonEl)
 	document.getElementById("editEmail").value = contact.email;
 
 	document.getElementById("editContactDiv").style.display = "block";
+
+	// The panel is just a display:none/block toggle, so without an explicit
+	// focus move a keyboard/screen-reader user has no indication it opened.
+	// Remember what had focus so Cancel/Save can put it back afterward.
+	editReturnFocusEl = buttonEl;
+	document.getElementById("editFirstName").focus();
 }
 
 function cancelEditContact()
 {
 	document.getElementById("editContactDiv").style.display = "none";
 	document.getElementById("editContactResult").innerHTML = "";
+
+	if (editReturnFocusEl)
+	{
+		editReturnFocusEl.focus();
+		editReturnFocusEl = null;
+	}
 }
 
 function saveEditContact()
@@ -144,7 +163,12 @@ function saveEditContact()
 			return;
 		}
 
+		// The row (and its Edit button) is about to be rebuilt by
+		// searchContacts(), so returning focus to that stale button would
+		// just lose focus a moment later -- land on the search box instead.
+		editReturnFocusEl = null;
 		cancelEditContact();
+		document.getElementById("searchText").focus();
 		searchContacts(); // refresh list from server
 	},
 	function(errorMessage)
