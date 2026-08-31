@@ -61,6 +61,12 @@ function doRegister()
 	let resultSpan = document.getElementById("registerResult");
 	resultSpan.textContent = "";
 
+	if (!firstName || !lastName || !username || !password || !confirmPassword)
+	{
+		resultSpan.textContent = "All fields are required";
+		return;
+	}
+
 	if (password !== confirmPassword)
 	{
 		resultSpan.textContent = "Passwords do not match";

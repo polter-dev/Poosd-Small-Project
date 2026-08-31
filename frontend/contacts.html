@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
 	<title>My Contacts - Personal Contact Manager</title>
@@ -19,16 +20,21 @@
 <!-- Server-side search: query is sent to the API on every keystroke/submit, -->
 <!-- results are never filtered from a locally cached contact list -->
 <div id="searchDiv">
-	<input type="text" id="searchText" placeholder="Search contacts..." aria-label="Search contacts" oninput="searchContacts();" />
+	<label for="searchText">Search Contacts</label><br />
+	<input type="text" id="searchText" placeholder="Search contacts..." oninput="searchContacts();" />
 	<span id="searchResult" aria-live="polite"></span>
 </div>
 
 <div id="addContactDiv">
 	<span id="inner-title">ADD A CONTACT</span>
-	<input type="text" id="addFirstName" placeholder="First Name" aria-label="First Name" />
-	<input type="text" id="addLastName" placeholder="Last Name" aria-label="Last Name" />
-	<input type="text" id="addPhone" placeholder="Phone" aria-label="Phone" />
-	<input type="text" id="addEmail" placeholder="Email" aria-label="Email" />
+	<label for="addFirstName" class="visually-hidden">First Name</label>
+	<input type="text" id="addFirstName" placeholder="First Name" />
+	<label for="addLastName" class="visually-hidden">Last Name</label>
+	<input type="text" id="addLastName" placeholder="Last Name" />
+	<label for="addPhone" class="visually-hidden">Phone</label>
+	<input type="tel" id="addPhone" placeholder="Phone" />
+	<label for="addEmail" class="visually-hidden">Email</label>
+	<input type="email" id="addEmail" placeholder="Email" />
 	<button type="button" id="addContactButton" class="buttons" onclick="addContact();">Add Contact</button>
 	<span id="addContactResult" aria-live="polite"></span>
 </div>
@@ -52,13 +58,17 @@
 </div>
 
 <!-- Simple inline edit panel, shown/populated by editContact() in js/contacts.js -->
-<div id="editContactDiv" style="display:none;">
+<div id="editContactDiv" class="hidden">
 	<span id="inner-title">EDIT CONTACT</span>
 	<input type="hidden" id="editContactId" />
-	<input type="text" id="editFirstName" placeholder="First Name" aria-label="First Name" />
-	<input type="text" id="editLastName" placeholder="Last Name" aria-label="Last Name" />
-	<input type="text" id="editPhone" placeholder="Phone" aria-label="Phone" />
-	<input type="text" id="editEmail" placeholder="Email" aria-label="Email" />
+	<label for="editFirstName" class="visually-hidden">First Name</label>
+	<input type="text" id="editFirstName" placeholder="First Name" />
+	<label for="editLastName" class="visually-hidden">Last Name</label>
+	<input type="text" id="editLastName" placeholder="Last Name" />
+	<label for="editPhone" class="visually-hidden">Phone</label>
+	<input type="tel" id="editPhone" placeholder="Phone" />
+	<label for="editEmail" class="visually-hidden">Email</label>
+	<input type="email" id="editEmail" placeholder="Email" />
 	<button type="button" id="saveEditButton" class="buttons" onclick="saveEditContact();">Save Changes</button>
 	<button type="button" id="cancelEditButton" class="buttons" onclick="cancelEditContact();">Cancel</button>
 	<span id="editContactResult" aria-live="polite"></span>

@@ -32,8 +32,9 @@ function searchContacts()
 
 		callApi("SearchContacts", payload, function(response)
 		{
-			resultSpan.textContent = "";
-			renderContacts(response.results || []);
+			let results = response.results || [];
+			resultSpan.textContent = results.length === 0 ? "No contacts found" : "";
+			renderContacts(results);
 		},
 		function(errorMessage)
 		{
@@ -156,9 +157,9 @@ function editContact(contactId, buttonEl)
 	document.getElementById("editPhone").value = contact.phone;
 	document.getElementById("editEmail").value = contact.email;
 
-	document.getElementById("editContactDiv").style.display = "block";
+	document.getElementById("editContactDiv").classList.remove("hidden");
 
-	// The panel is just a display:none/block toggle, so without an explicit
+	// The panel is just a hidden-class toggle, so without an explicit
 	// focus move a keyboard/screen-reader user has no indication it opened.
 	// Remember what had focus so Cancel/Save can put it back afterward.
 	editReturnFocusEl = buttonEl;
@@ -167,7 +168,7 @@ function editContact(contactId, buttonEl)
 
 function cancelEditContact()
 {
-	document.getElementById("editContactDiv").style.display = "none";
+	document.getElementById("editContactDiv").classList.add("hidden");
 	document.getElementById("editContactResult").textContent = "";
 
 	if (editReturnFocusEl)

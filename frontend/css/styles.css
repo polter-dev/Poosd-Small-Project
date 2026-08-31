@@ -24,6 +24,8 @@ body
 	margin: 2% 0;
 	text-align: center;
 	color: var(--color-light);
+	overflow-wrap: break-word;
+	box-sizing: border-box;
 }
 
 #inner-title
@@ -75,7 +77,9 @@ body
 }
 
 input[type="text"],
-input[type="password"]
+input[type="password"],
+input[type="tel"],
+input[type="email"]
 {
 	border-radius: 25px;
 	border: 1px solid var(--color-accent);
@@ -89,13 +93,34 @@ input[type="password"]
 	font-family: 'Ubuntu', sans-serif;
 	font-size: 0.8em;
 	display: block;
+	box-sizing: border-box;
 }
 
 input[type="text"]::placeholder,
-input[type="password"]::placeholder
+input[type="password"]::placeholder,
+input[type="tel"]::placeholder,
+input[type="email"]::placeholder
 {
+	/* full-opacity color-dark measures 6.78:1 on the light input background;
+	   the previous opacity:0.6 flattened that to ~2.79:1, well under the
+	   WCAG AA 4.5:1 minimum for text */
 	color: var(--color-dark);
-	opacity: 0.6;
+}
+
+input[type="text"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="tel"]:focus-visible,
+input[type="email"]:focus-visible,
+.buttons:focus-visible,
+.switchText a:focus-visible
+{
+	outline: 3px solid var(--color-light);
+	outline-offset: 2px;
+}
+
+.hidden
+{
+	display: none;
 }
 
 .buttons
@@ -107,7 +132,11 @@ input[type="password"]::placeholder
 	margin: 10px auto;
 	font-family: 'Ubuntu', sans-serif;
 	cursor: pointer;
-	display: block;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px; /* tap-target guideline */
+	box-sizing: border-box;
 	background-color: var(--color-accent);
 	color: var(--color-light);
 	transition: opacity 0.15s ease;
@@ -120,10 +149,14 @@ input[type="password"]::placeholder
 
 .buttons.small
 {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	font-size: 0.7em;
-	padding: 4px 10px;
-	margin: 2px;
+	padding: 6px 14px;
+	min-height: 36px; /* smaller than the 44px guideline -- these sit inline */
+	box-sizing: border-box;      /* per table row next to another button;   */
+	margin: 2px;                 /* full 44px here would bloat every row.   */
 }
 
 .switchText
@@ -152,6 +185,7 @@ input[type="password"]::placeholder
 {
 	display: inline-block;
 	font-size: 0.7em;
+	font-weight: bold; /* not color alone -- WCAG 1.4.1 */
 	/* lightened from #e08a8a so text on the dark panel clears WCAG AA 4.5:1 */
 	/* (was 3.74:1, now 4.80:1) */
 	color: #f0a3a3;
@@ -159,6 +193,14 @@ input[type="password"]::placeholder
 }
 
 /* ---- contacts table ---- */
+/* #contactsListDiv scrolls horizontally rather than the whole page, so a
+   5-column table stays usable at narrow widths (e.g. 375px) without
+   forcing horizontal scroll on the page itself */
+#contactsListDiv
+{
+	overflow-x: auto;
+}
+
 #contactsTable
 {
 	width: 100%;
@@ -180,4 +222,24 @@ input[type="password"]::placeholder
 {
 	background-color: var(--color-accent);
 	color: var(--color-light);
+}
+
+/* ---- narrow screens (phones) ---- */
+@media (max-width: 480px)
+{
+	#loginDiv,
+	#registerDiv,
+	#addContactDiv,
+	#editContactDiv,
+	#searchDiv,
+	#contactsListDiv,
+	#loggedInDiv
+	{
+		width: 92%;
+	}
+
+	#title
+	{
+		font-size: 28px;
+	}
 }
