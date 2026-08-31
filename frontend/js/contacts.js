@@ -42,6 +42,15 @@ function searchContacts()
 	}, 250); // small debounce so we're not hitting the API on every keystroke
 }
 
+// Appends a <td> holding `text` as literal text -- never HTML -- so a contact
+// field can never inject markup into the page (see issue #82).
+function appendTextCell(row, text)
+{
+	let cell = document.createElement("td");
+	cell.textContent = text;
+	row.appendChild(cell);
+}
+
 function renderContacts(contacts)
 {
 	let tbody = document.getElementById("contactsTableBody");
@@ -52,20 +61,47 @@ function renderContacts(contacts)
 		let contact = contacts[i];
 		let row = document.createElement("tr");
 
+		appendTextCell(row, contact.firstName);
+		appendTextCell(row, contact.lastName);
+		appendTextCell(row, contact.phone);
+		appendTextCell(row, contact.email);
+
+		// Built with createElement/textContent/setAttribute rather than an
+		// innerHTML string -- a contact named `<b>x</b>` or containing a `"`
+		// used to inject markup or break out of the aria-label attribute
+		// (issue #82). None of these APIs parse their input as HTML, so
+		// arbitrary contact text is always treated as literal text/attribute
+		// value, never as markup.
+		let actionsCell = document.createElement("td");
+
 		// Distinct aria-labels per row -- otherwise a screen reader user
 		// tabbing through the table hears "Edit... Edit... Edit..." with no
 		// way to tell which contact's button they're on.
 		let fullName = contact.firstName + " " + contact.lastName;
 
-		row.innerHTML =
-			"<td>" + contact.firstName + "</td>" +
-			"<td>" + contact.lastName + "</td>" +
-			"<td>" + contact.phone + "</td>" +
-			"<td>" + contact.email + "</td>" +
-			"<td>" +
-				"<button type=\"button\" class=\"buttons small\" aria-label=\"Edit " + fullName + "\" onclick=\"editContact(" + contact.id + ", this)\">Edit</button>" +
-				"<button type=\"button\" class=\"buttons small\" aria-label=\"Delete " + fullName + "\" onclick=\"deleteContact(" + contact.id + ")\">Delete</button>" +
-			"</td>";
+		let editButton = document.createElement("button");
+		editButton.type = "button";
+		editButton.className = "buttons small";
+		editButton.textContent = "Edit";
+		editButton.setAttribute("aria-label", "Edit " + fullName);
+		editButton.addEventListener("click", function()
+		{
+			editContact(contact.id, editButton);
+		});
+
+		let deleteButton = document.createElement("button");
+		deleteButton.type = "button";
+		deleteButton.className = "buttons small";
+		deleteButton.textContent = "Delete";
+		deleteButton.setAttribute("aria-label", "Delete " + fullName);
+		deleteButton.addEventListener("click", function()
+		{
+			deleteContact(contact.id);
+		});
+
+		actionsCell.appendChild(editButton);
+		actionsCell.appendChild(deleteButton);
+		row.appendChild(actionsCell);
 
 		row.dataset.contact = JSON.stringify(contact);
 		tbody.appendChild(row);

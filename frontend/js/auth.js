@@ -111,7 +111,11 @@ function requireLogin()
 	let userNameSpan = document.getElementById("userName");
 	if (userNameSpan)
 	{
-		userNameSpan.innerHTML = "Logged in as " + session.firstName + " " + session.lastName;
+		// textContent, not innerHTML -- firstName/lastName are whatever the
+		// user typed at registration, so this is the same class of bug as
+		// issue #82 (a name like "<img src=x onerror=...>" would otherwise
+		// execute on every page load).
+		userNameSpan.textContent = "Logged in as " + session.firstName + " " + session.lastName;
 	}
 
 	return session;
