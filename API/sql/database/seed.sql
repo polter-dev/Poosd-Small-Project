@@ -24,10 +24,6 @@ USE ContactManager;
 DELETE FROM Contacts;
 DELETE FROM Users;
 
--- Reset auto-increment counters so IDs are predictable/readable during demo.
-ALTER TABLE Users AUTO_INCREMENT = 1;
-ALTER TABLE Contacts AUTO_INCREMENT = 1;
-
 -- ---------------------------------------------------------------------
 -- Users
 -- ---------------------------------------------------------------------
