@@ -12,20 +12,20 @@
 
 <h1 id="title">My Contacts</h1>
 
-<div id="loggedInDiv">
+<div id="loggedInDiv" class="reveal">
 	<span id="userName"></span>
 	<button type="button" id="logoutButton" class="buttons" onclick="doLogout();">Log Out</button>
 </div>
 
 <!-- Server-side search: query is sent to the API on every keystroke/submit, -->
 <!-- results are never filtered from a locally cached contact list -->
-<div id="searchDiv">
+<div id="searchDiv" class="reveal">
 	<label for="searchText">Search Contacts</label><br />
 	<input type="text" id="searchText" placeholder="Search contacts..." oninput="searchContacts();" />
 	<span id="searchResult" aria-live="polite"></span>
 </div>
 
-<div id="addContactDiv">
+<div id="addContactDiv" class="reveal">
 	<span id="inner-title">ADD A CONTACT</span>
 	<label for="addFirstName" class="visually-hidden">First Name</label>
 	<input type="text" id="addFirstName" placeholder="First Name" />
@@ -39,7 +39,7 @@
 	<span id="addContactResult" aria-live="polite"></span>
 </div>
 
-<div id="contactsListDiv">
+<div id="contactsListDiv" class="reveal">
 	<table id="contactsTable">
 		<caption class="visually-hidden">Your contacts</caption>
 		<thead>
@@ -82,5 +82,6 @@
 <script type="text/javascript" src="js/auth.js"></script>
 <script type="text/javascript" src="js/contacts.js"></script>
 <script type="text/javascript" src="js/accessibility.js"></script>
+<script type="text/javascript" src="js/scroll-reveal.js"></script>
 </body>
 </html>
