@@ -6,22 +6,37 @@
 	/* darkened from #715A5A so light text on it (buttons, table header) clears */
 	/* the WCAG AA 4.5:1 text-contrast minimum (was 4.47:1, now 4.92:1) */
 	--color-accent: #6a5454;
+	--color-accent-hover: #7d6565;
 	--color-light: #D3DAD9;
+	--shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.28), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+	--shadow-button: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+*
+{
+	box-sizing: border-box;
 }
 
 body
 {
+	background:
+		radial-gradient(circle at 15% 0%, rgba(106, 84, 84, 0.25), transparent 45%),
+		radial-gradient(circle at 85% 100%, rgba(106, 84, 84, 0.18), transparent 45%),
+		var(--color-darkest);
 	background-color: var(--color-darkest);
 	font-family: 'Ubuntu', sans-serif;
+	line-height: 1.5;
 	margin: 0;
-	padding-bottom: 40px;
+	padding: 32px 16px 48px 16px;
 }
 
 #title
 {
 	font-size: 40px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
 	width: 100%;
-	margin: 2% 0;
+	margin: 0 0 28px 0;
 	text-align: center;
 	color: var(--color-light);
 	overflow-wrap: break-word;
@@ -30,12 +45,15 @@ body
 
 #inner-title
 {
-	display: inline-block;
-	font-size: 0.8em;
-	width: 90%;
+	display: block;
+	font-size: 0.75em;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	width: 100%;
 	text-align: center;
-	margin-left: 5%;
-	margin-bottom: 2%;
+	margin: 0 0 20px 0;
+	padding-bottom: 12px;
+	border-bottom: 1px solid rgba(211, 218, 217, 0.15);
 	color: var(--color-light);
 	opacity: 0.85;
 }
@@ -51,10 +69,12 @@ body
 	font-size: 20px;
 	width: 70%;
 	max-width: 800px;
-	margin: 0 auto 20px auto;
-	padding: 25px;
+	margin: 0 auto 24px auto;
+	padding: 28px;
 	background-color: var(--color-dark);
-	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 12px;
+	box-shadow: var(--shadow-panel);
 	box-sizing: border-box;
 	text-align: center;
 	color: var(--color-light);
@@ -65,15 +85,23 @@ body
 	font-size: 20px;
 	width: 70%;
 	max-width: 800px;
-	margin: 0 auto 20px auto;
-	padding: 15px 25px;
+	margin: 0 auto 24px auto;
+	padding: 16px 28px;
 	background-color: var(--color-dark);
-	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 12px;
+	box-shadow: var(--shadow-panel);
 	box-sizing: border-box;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	color: var(--color-light);
+}
+
+#loggedInDiv #userName
+{
+	font-weight: 700;
+	letter-spacing: 0.3px;
 }
 
 input[type="text"],
@@ -88,12 +116,31 @@ input[type="email"]
 	text-align: center;
 	width: 80%;
 	max-width: 400px;
-	padding: 8px 0;
+	padding: 10px 0;
 	margin: 6px auto;
 	font-family: 'Ubuntu', sans-serif;
 	font-size: 0.8em;
 	display: block;
 	box-sizing: border-box;
+	transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+input[type="text"]:hover,
+input[type="password"]:hover,
+input[type="tel"]:hover,
+input[type="email"]:hover
+{
+	border-color: var(--color-accent-hover);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+input[type="email"]:focus
+{
+	border-color: var(--color-light);
+	box-shadow: 0 0 0 3px rgba(211, 218, 217, 0.25);
+	outline: none;
 }
 
 input[type="text"]::placeholder,
@@ -126,6 +173,8 @@ input[type="email"]:focus-visible,
 .buttons
 {
 	font-size: 0.9em;
+	font-weight: 700;
+	letter-spacing: 0.2px;
 	border-radius: 25px;
 	border: none;
 	padding: 10px 20px;
@@ -139,12 +188,21 @@ input[type="email"]:focus-visible,
 	box-sizing: border-box;
 	background-color: var(--color-accent);
 	color: var(--color-light);
-	transition: opacity 0.15s ease;
+	box-shadow: var(--shadow-button);
+	transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .buttons:hover
 {
-	opacity: 0.75;
+	background-color: var(--color-accent-hover);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.buttons:active
+{
+	transform: translateY(0);
+	box-shadow: var(--shadow-button);
 }
 
 .buttons.small
@@ -159,10 +217,36 @@ input[type="email"]:focus-visible,
 	margin: 2px;                 /* full 44px here would bloat every row.   */
 }
 
+#cancelEditButton
+{
+	background-color: transparent;
+	color: var(--color-light);
+	box-shadow: none;
+	border: 1px solid var(--color-accent);
+}
+
+#cancelEditButton:hover
+{
+	background-color: rgba(211, 218, 217, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+	.buttons
+	{
+		transition: background-color 0.15s ease;
+	}
+
+	.buttons:hover
+	{
+		transform: none;
+	}
+}
+
 .switchText
 {
 	font-size: 0.6em;
-	margin-top: 10px;
+	margin-top: 14px;
 	color: var(--color-light);
 }
 
@@ -170,6 +254,7 @@ input[type="email"]:focus-visible,
 {
 	color: var(--color-light);
 	text-decoration: underline;
+	text-underline-offset: 3px;
 }
 
 .switchText a:hover
@@ -218,24 +303,85 @@ input[type="email"]:focus-visible,
 #contactsTable
 {
 	width: 100%;
-	border-collapse: collapse;
+	border-collapse: separate;
+	border-spacing: 0;
+	border-radius: 8px;
+	overflow: hidden;
 	background-color: var(--color-light);
 }
 
 #contactsTable th,
 #contactsTable td
 {
-	border: 1px solid var(--color-dark);
-	padding: 8px;
+	border-bottom: 1px solid var(--color-dark);
+	padding: 10px 8px;
 	font-size: 0.7em;
 	text-align: left;
 	color: var(--color-darkest);
+}
+
+#contactsTable tbody tr:last-child td
+{
+	border-bottom: none;
 }
 
 #contactsTable th
 {
 	background-color: var(--color-accent);
 	color: var(--color-light);
+	font-weight: 700;
+	letter-spacing: 0.3px;
+}
+
+#contactsTable tbody tr:nth-child(even)
+{
+	background-color: rgba(55, 53, 62, 0.06);
+}
+
+#contactsTable tbody tr:hover
+{
+	background-color: rgba(106, 84, 84, 0.15);
+}
+
+/* ---- scroll reveal ---- */
+/* Default: fully visible. Only when js/scroll-reveal.js actually runs (and
+   the user hasn't asked for reduced motion) does it add js-reveal-enabled to
+   <html>, which is what switches these panels into the pre-animation hidden
+   state below -- so no-JS visitors and reduced-motion visitors never have
+   content that depends on a script to become visible. */
+.reveal
+{
+	opacity: 1;
+	transform: none;
+}
+
+html.js-reveal-enabled .reveal
+{
+	opacity: 0;
+	transform: translateY(18px);
+	transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+html.js-reveal-enabled .reveal.is-visible
+{
+	opacity: 1;
+	transform: none;
+}
+
+/* Staggered on contacts.html so the panels cascade in rather than popping
+   together -- purely cosmetic, harmless if a panel isn't present on a page. */
+html.js-reveal-enabled #searchDiv { transition-delay: 0.08s; }
+html.js-reveal-enabled #addContactDiv { transition-delay: 0.16s; }
+html.js-reveal-enabled #contactsListDiv { transition-delay: 0.24s; }
+
+@media (prefers-reduced-motion: reduce)
+{
+	html.js-reveal-enabled .reveal
+	{
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
 }
 
 /* ---- narrow screens (phones) ---- */
@@ -256,5 +402,15 @@ input[type="email"]:focus-visible,
 	#title
 	{
 		font-size: 28px;
+	}
+
+	#loginDiv,
+	#registerDiv,
+	#addContactDiv,
+	#editContactDiv,
+	#searchDiv,
+	#contactsListDiv
+	{
+		padding: 20px;
 	}
 }

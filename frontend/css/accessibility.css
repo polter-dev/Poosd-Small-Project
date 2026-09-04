@@ -180,20 +180,30 @@ html.a11y-high-contrast
 	--color-darkest: #000000;
 	--color-dark: #000000;
 	--color-accent: #ffd400;
+	--color-accent-hover: #e6c000;
 	--color-light: #ffffff;
 }
 
 html.a11y-high-contrast body
 {
-	background-color: #000000;
+	background: #000000;
 }
 
+/* Only elements that keep a yellow (--color-accent) background in high
+   contrast mode need black text -- .a11y-toggle/.a11y-btn-row buttons sit on
+   --color-darkest (black in this mode), so forcing black text on them here
+   would make it unreadable against their own background. */
 html.a11y-high-contrast .buttons,
-html.a11y-high-contrast .a11y-toggle,
-html.a11y-high-contrast .a11y-btn-row button,
-html.a11y-high-contrast #a11yToggleBtn
+html.a11y-high-contrast #a11yToggleBtn,
+html.a11y-high-contrast .a11y-toggle[aria-pressed="true"]
 {
 	color: #000000;
+}
+
+html.a11y-high-contrast .a11y-toggle,
+html.a11y-high-contrast .a11y-btn-row button
+{
+	color: #ffffff;
 }
 
 html.a11y-high-contrast input[type="text"],
