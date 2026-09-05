@@ -62,6 +62,34 @@ function getTextField($data, $key)
 }
 
 /*
+ * Safely pulls one ID (a positive whole number) out of the decoded request body.
+ *
+ * Used for userId and for a contact's id. The client normally sends these as
+ * JSON numbers, but a numeric string ("7") is accepted too -- our own edit form
+ * reads its value out of an <input>, which always hands back a string.
+ *
+ * Anything else -- missing, a decimal, a negative, "abc", a list -- returns 0,
+ * and the endpoint's own "must be positive" check then rejects it with a normal
+ * error message instead of letting a junk value reach the database.
+ */
+function getIdField($data, $key)
+{
+    $value = $data[$key] ?? null;
+
+    if (is_int($value)) {
+        return $value;
+    }
+
+    // ctype_digit() is true only for a string of nothing but digits, so "-3"
+    // and "1.5" are rejected here rather than being silently truncated by (int).
+    if (is_string($value) && ctype_digit($value)) {
+        return (int)$value;
+    }
+
+    return 0;
+}
+
+/*
  * Opens the connection to the MySQL database and hands it back.
  *
  * Lives here so the login/password for the database is only referenced in one

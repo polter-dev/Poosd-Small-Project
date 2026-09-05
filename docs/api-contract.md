@@ -37,12 +37,14 @@ human-readable message on failure.
 ## Shared PHP
 
 - `API/db.php` opens the `mysqli` connection using values from
-  `API/config.php` and defines five helpers used by every endpoint:
+  `API/config.php` and defines six helpers used by every endpoint:
   `getRequestInfo()` (decode the JSON body), `sendResultInfoAsJson($obj)`
   (set the header and echo), `returnWithError($msg)`, `getDbConnection()`
   (open the mysqli connection with the shared charset/error-reporting
-  setup), and `getTextField($data, $key)` (safely pull one string field
-  out of the decoded body, `""` if it's missing or the wrong type).
+  setup), `getTextField($data, $key)` (safely pull one string field
+  out of the decoded body, `""` if it's missing or the wrong type), and
+  `getIdField($data, $key)` (same idea for a numeric id — accepts a JSON
+  number or an all-digits string, `0` for anything else).
   `db.php` also installs a global exception handler so an unexpected
   DB/PHP error comes back as a JSON `{"error": ...}` instead of an HTML
   fatal-error page.

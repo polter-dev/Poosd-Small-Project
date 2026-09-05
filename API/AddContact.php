@@ -22,16 +22,11 @@ $lastName  = getTextField($in, 'lastName');
 $phone     = getTextField($in, 'phone');
 $email     = getTextField($in, 'email');
 
-// userId is a number, not text, so getTextField() is not the right tool. The
-// client normally sends it as a JSON number, but a numeric string ("7") is
-// accepted too. Anything else -- missing, 0, negative, "abc", a list -- leaves
-// $userId at 0 and fails the check just below.
-$userId = 0;
-if (is_int($in['userId'] ?? null)) {
-    $userId = $in['userId'];
-} elseif (is_string($in['userId'] ?? null) && ctype_digit($in['userId'])) {
-    $userId = (int)$in['userId'];
-}
+// userId is a number, not text, so getTextField() is not the right tool.
+// getIdField() (in db.php) accepts a JSON number or a numeric string and gives
+// back 0 for anything else -- missing, negative, "abc", a list -- which then
+// fails the check just below.
+$userId = getIdField($in, 'userId');
 
 // Step 1: the userId must identify a real, logged-in user. We only check that it
 // is a positive integer here; the FOREIGN KEY on Contacts.UserID makes MySQL
