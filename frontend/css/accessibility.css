@@ -195,7 +195,8 @@ html.a11y-high-contrast body
    would make it unreadable against their own background. */
 html.a11y-high-contrast .buttons,
 html.a11y-high-contrast #a11yToggleBtn,
-html.a11y-high-contrast .a11y-toggle[aria-pressed="true"]
+html.a11y-high-contrast .a11y-toggle[aria-pressed="true"],
+html.a11y-high-contrast #contactsTable th
 {
 	color: #000000;
 }
