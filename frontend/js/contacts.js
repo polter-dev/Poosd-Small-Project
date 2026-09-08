@@ -129,6 +129,63 @@ function updateTableScrollHint()
 
 window.addEventListener("resize", updateTableScrollHint);
 
+// ---- Add Contact panel (modal overlay) ----
+// Same open/close idiom as the profile menu in js/auth.js and the
+// accessibility widget in js/accessibility.js: Escape and click-outside are
+// wired up only while the panel is actually open, via a document-level
+// capture-phase click listener.
+
+let addReturnFocusEl = null;
+
+function openAddContact(triggerEl)
+{
+	closeEditContact(false); // only one form visible at a time
+
+	document.getElementById("addContactResult").textContent = "";
+	document.getElementById("addContactOverlay").classList.add("open");
+	document.addEventListener("keydown", onAddContactKeydown);
+	document.addEventListener("click", onAddContactOutsideClick, true);
+
+	addReturnFocusEl = triggerEl || document.activeElement;
+	document.getElementById("addFirstName").focus();
+}
+
+function closeAddContact(returnFocus)
+{
+	let overlay = document.getElementById("addContactOverlay");
+	if (!overlay.classList.contains("open"))
+	{
+		return;
+	}
+
+	overlay.classList.remove("open");
+	document.removeEventListener("keydown", onAddContactKeydown);
+	document.removeEventListener("click", onAddContactOutsideClick, true);
+
+	if (returnFocus !== false && addReturnFocusEl)
+	{
+		addReturnFocusEl.focus();
+	}
+	addReturnFocusEl = null;
+}
+
+function onAddContactKeydown(event)
+{
+	if (event.key === "Escape")
+	{
+		closeAddContact();
+	}
+}
+
+function onAddContactOutsideClick(event)
+{
+	let panel = document.getElementById("addContactDiv");
+	if (panel && !panel.contains(event.target))
+	{
+		closeAddContact(false);
+	}
+}
+
 function addContact()
 {
 	let resultSpan = document.getElementById("addContactResult");
@@ -150,12 +207,12 @@ function addContact()
 			return;
 		}
 
-		resultSpan.textContent = "Contact added";
 		document.getElementById("addFirstName").value = "";
 		document.getElementById("addLastName").value = "";
 		document.getElementById("addPhone").value = "";
 		document.getElementById("addEmail").value = "";
 
+		closeAddContact();
 		searchContacts(); // refresh list from server
 	},
 	function(errorMessage)
@@ -163,6 +220,8 @@ function addContact()
 		resultSpan.textContent = errorMessage;
 	});
 }
+
+// ---- Edit Contact panel (modal overlay) ----
 
 let editReturnFocusEl = null;
 
@@ -176,25 +235,65 @@ function editContact(contactId, buttonEl)
 	document.getElementById("editLastName").value = contact.lastName;
 	document.getElementById("editPhone").value = contact.phone;
 	document.getElementById("editEmail").value = contact.email;
+	document.getElementById("editContactResult").textContent = "";
 
-	document.getElementById("editContactDiv").classList.remove("hidden");
+	openEditContact(buttonEl);
+}
 
-	// The panel is just a hidden-class toggle, so without an explicit
-	// focus move a keyboard/screen-reader user has no indication it opened.
-	// Remember what had focus so Cancel/Save can put it back afterward.
-	editReturnFocusEl = buttonEl;
+function openEditContact(triggerEl)
+{
+	closeAddContact(false); // only one form visible at a time
+
+	document.getElementById("editContactOverlay").classList.add("open");
+	document.addEventListener("keydown", onEditContactKeydown);
+	document.addEventListener("click", onEditContactOutsideClick, true);
+
+	// Without an explicit focus move a keyboard/screen-reader user has no
+	// indication the panel opened. Remember what had focus so Cancel/Save
+	// can put it back afterward.
+	editReturnFocusEl = triggerEl || document.activeElement;
 	document.getElementById("editFirstName").focus();
+}
+
+function closeEditContact(returnFocus)
+{
+	let overlay = document.getElementById("editContactOverlay");
+	if (!overlay.classList.contains("open"))
+	{
+		return;
+	}
+
+	overlay.classList.remove("open");
+	document.getElementById("editContactResult").textContent = "";
+	document.removeEventListener("keydown", onEditContactKeydown);
+	document.removeEventListener("click", onEditContactOutsideClick, true);
+
+	if (returnFocus !== false && editReturnFocusEl)
+	{
+		editReturnFocusEl.focus();
+	}
+	editReturnFocusEl = null;
 }
 
 function cancelEditContact()
 {
-	document.getElementById("editContactDiv").classList.add("hidden");
-	document.getElementById("editContactResult").textContent = "";
+	closeEditContact(true);
+}
 
-	if (editReturnFocusEl)
+function onEditContactKeydown(event)
+{
+	if (event.key === "Escape")
 	{
-		editReturnFocusEl.focus();
-		editReturnFocusEl = null;
+		closeEditContact(true);
+	}
+}
+
+function onEditContactOutsideClick(event)
+{
+	let panel = document.getElementById("editContactDiv");
+	if (panel && !panel.contains(event.target))
+	{
+		closeEditContact(false);
 	}
 }
 
@@ -224,7 +323,7 @@ function saveEditContact()
 		// searchContacts(), so returning focus to that stale button would
 		// just lose focus a moment later -- land on the search box instead.
 		editReturnFocusEl = null;
-		cancelEditContact();
+		closeEditContact(false);
 		document.getElementById("searchText").focus();
 		searchContacts(); // refresh list from server
 	},

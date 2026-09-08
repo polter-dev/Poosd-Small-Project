@@ -43,7 +43,7 @@ body
 	box-sizing: border-box;
 }
 
-#inner-title
+.inner-title
 {
 	display: block;
 	font-size: 0.75em;
@@ -58,11 +58,9 @@ body
 	opacity: 0.85;
 }
 
-/* ---- shared panel look (login, register, add/edit contact) ---- */
+/* ---- shared panel look (login, register, search, contacts list) ---- */
 #loginDiv,
 #registerDiv,
-#addContactDiv,
-#editContactDiv,
 #searchDiv,
 #contactsListDiv
 {
@@ -80,28 +78,115 @@ body
 	color: var(--color-light);
 }
 
-#loggedInDiv
+/* ---- account controls (profile bubble + add-contact button, fixed top-right) ---- */
+#accountControls
 {
-	font-size: 20px;
-	width: 70%;
-	max-width: 800px;
-	margin: 0 auto 24px auto;
-	padding: 16px 28px;
-	background-color: var(--color-dark);
-	border: 1px solid rgba(255, 255, 255, 0.06);
-	border-radius: 12px;
-	box-shadow: var(--shadow-panel);
-	box-sizing: border-box;
+	position: fixed;
+	top: 20px;
+	right: 20px;
+	z-index: 800;
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	color: var(--color-light);
+	gap: 10px;
 }
 
-#loggedInDiv #userName
+.fab
 {
+	width: 44px;
+	height: 44px;
+	flex: 0 0 auto;
+	border-radius: 50%;
+	border: none;
+	background-color: var(--color-accent);
+	color: var(--color-light);
+	box-shadow: var(--shadow-button);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1;
+	transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fab:hover
+{
+	background-color: var(--color-accent-hover);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.fab:active
+{
+	transform: translateY(0);
+	box-shadow: var(--shadow-button);
+}
+
+#profileBubbleWrap
+{
+	position: relative;
+}
+
+.profile-bubble
+{
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	border: none;
+	background-color: var(--color-dark);
+	color: var(--color-light);
+	box-shadow: var(--shadow-button);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profile-bubble:hover
+{
+	background-color: var(--color-accent);
+	transform: translateY(-1px);
+}
+
+#profileMenu
+{
+	position: absolute;
+	top: calc(100% + 10px);
+	right: 0;
+	min-width: 220px;
+	background-color: var(--color-dark);
+	color: var(--color-light);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 10px;
+	padding: 14px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+	box-sizing: border-box;
+	text-align: center;
+}
+
+#profileMenu[hidden]
+{
+	display: none;
+}
+
+#profileMenu #userName
+{
+	display: block;
+	font-size: 0.75em;
 	font-weight: 700;
 	letter-spacing: 0.3px;
+	margin-bottom: 10px;
+	overflow-wrap: break-word;
+}
+
+#profileMenu .buttons
+{
+	width: 100%;
 }
 
 input[type="text"],
@@ -217,7 +302,8 @@ input[type="email"]:focus-visible,
 	margin: 2px;                 /* full 44px here would bloat every row.   */
 }
 
-#cancelEditButton
+#cancelEditButton,
+#cancelAddButton
 {
 	background-color: transparent;
 	color: var(--color-light);
@@ -225,19 +311,37 @@ input[type="email"]:focus-visible,
 	border: 1px solid var(--color-accent);
 }
 
-#cancelEditButton:hover
+#cancelEditButton:hover,
+#cancelAddButton:hover
 {
 	background-color: rgba(211, 218, 217, 0.08);
 }
 
+.modal-actions
+{
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	justify-content: center;
+}
+
+.modal-actions .buttons
+{
+	margin: 10px 0;
+}
+
 @media (prefers-reduced-motion: reduce)
 {
-	.buttons
+	.buttons,
+	.fab,
+	.profile-bubble
 	{
 		transition: background-color 0.15s ease;
 	}
 
-	.buttons:hover
+	.buttons:hover,
+	.fab:hover,
+	.profile-bubble:hover
 	{
 		transform: none;
 	}
@@ -371,8 +475,7 @@ html.js-reveal-enabled .reveal.is-visible
 /* Staggered on contacts.html so the panels cascade in rather than popping
    together -- purely cosmetic, harmless if a panel isn't present on a page. */
 html.js-reveal-enabled #searchDiv { transition-delay: 0.08s; }
-html.js-reveal-enabled #addContactDiv { transition-delay: 0.16s; }
-html.js-reveal-enabled #contactsListDiv { transition-delay: 0.24s; }
+html.js-reveal-enabled #contactsListDiv { transition-delay: 0.16s; }
 
 @media (prefers-reduced-motion: reduce)
 {
@@ -384,16 +487,97 @@ html.js-reveal-enabled #contactsListDiv { transition-delay: 0.24s; }
 	}
 }
 
+/* ---- Add/Edit contact modal ---- */
+/* Always present in the DOM (not display:none) so opacity/transform can
+   transition; visibility:hidden keeps it non-interactive and out of the tab
+   order while closed. js/contacts.js toggles the "open" class. */
+.modal-overlay
+{
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	box-sizing: border-box;
+	background-color: rgba(0, 0, 0, 0.55);
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.modal-overlay.open
+{
+	opacity: 1;
+	visibility: visible;
+}
+
+.modal-panel
+{
+	position: relative;
+	font-size: 20px;
+	width: 100%;
+	max-width: 440px;
+	max-height: calc(100vh - 32px);
+	overflow-y: auto;
+	padding: 32px 28px 28px 28px;
+	background-color: var(--color-dark);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 12px;
+	box-shadow: var(--shadow-panel);
+	box-sizing: border-box;
+	text-align: center;
+	color: var(--color-light);
+	transform: translateY(-16px) scale(0.98);
+	transition: transform 0.25s ease;
+}
+
+.modal-overlay.open .modal-panel
+{
+	transform: translateY(0) scale(1);
+}
+
+.modal-close
+{
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	border: none;
+	background: none;
+	color: var(--color-light);
+	font-size: 20px;
+	line-height: 1;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.modal-close:hover
+{
+	background-color: rgba(211, 218, 217, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+	.modal-overlay,
+	.modal-panel
+	{
+		transition: none;
+	}
+}
+
 /* ---- narrow screens (phones) ---- */
 @media (max-width: 480px)
 {
 	#loginDiv,
 	#registerDiv,
-	#addContactDiv,
-	#editContactDiv,
 	#searchDiv,
 	#contactsListDiv,
-	#loggedInDiv,
 	#tableScrollHint
 	{
 		width: 92%;
@@ -406,11 +590,33 @@ html.js-reveal-enabled #contactsListDiv { transition-delay: 0.24s; }
 
 	#loginDiv,
 	#registerDiv,
-	#addContactDiv,
-	#editContactDiv,
 	#searchDiv,
 	#contactsListDiv
 	{
 		padding: 20px;
+	}
+
+	#accountControls
+	{
+		top: 12px;
+		right: 12px;
+		gap: 8px;
+	}
+
+	.fab,
+	.profile-bubble
+	{
+		width: 40px;
+		height: 40px;
+	}
+
+	#profileMenu
+	{
+		min-width: 180px;
+	}
+
+	.modal-panel
+	{
+		padding: 28px 18px 20px 18px;
 	}
 }
