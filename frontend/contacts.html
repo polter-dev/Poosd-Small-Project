@@ -12,9 +12,23 @@
 
 <h1 id="title">My Contacts</h1>
 
-<div id="loggedInDiv" class="reveal">
-	<span id="userName"></span>
-	<button type="button" id="logoutButton" class="buttons" onclick="doLogout();">Log Out</button>
+<!-- Account bubble + Add Contact trigger, fixed top-right. The bubble's -->
+<!-- dropdown holds what #loggedInDiv used to show inline (name + logout); -->
+<!-- open/close/outside-click/escape logic lives in js/auth.js. -->
+<div id="accountControls" class="reveal">
+	<button type="button" id="openAddContactBtn" class="fab" aria-haspopup="dialog" aria-expanded="false" aria-controls="addContactDiv" aria-label="Add contact" onclick="openAddContact(this);">
+		<span aria-hidden="true">+</span>
+	</button>
+
+	<div id="profileBubbleWrap">
+		<button type="button" id="profileToggleBtn" class="profile-bubble" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" aria-label="Account menu" onclick="toggleProfileMenu();">
+			<span id="profileInitials" aria-hidden="true"></span>
+		</button>
+		<div id="profileMenu" role="menu" aria-label="Account" hidden>
+			<span id="userName"></span>
+			<button type="button" id="logoutButton" class="buttons" onclick="doLogout();">Log Out</button>
+		</div>
+	</div>
 </div>
 
 <!-- Server-side search: query is sent to the API on every keystroke/submit, -->
@@ -25,18 +39,26 @@
 	<span id="searchResult" aria-live="polite"></span>
 </div>
 
-<div id="addContactDiv" class="reveal">
-	<span id="inner-title">ADD A CONTACT</span>
-	<label for="addFirstName" class="visually-hidden">First Name</label>
-	<input type="text" id="addFirstName" placeholder="First Name" />
-	<label for="addLastName" class="visually-hidden">Last Name</label>
-	<input type="text" id="addLastName" placeholder="Last Name" />
-	<label for="addPhone" class="visually-hidden">Phone</label>
-	<input type="tel" id="addPhone" placeholder="Phone" />
-	<label for="addEmail" class="visually-hidden">Email</label>
-	<input type="email" id="addEmail" placeholder="Email" />
-	<button type="button" id="addContactButton" class="buttons" onclick="addContact();">Add Contact</button>
-	<span id="addContactResult" aria-live="polite"></span>
+<!-- Add Contact panel: hidden until openAddContact() (js/contacts.js) adds -->
+<!-- "open" to the overlay -- triggered by the + button above. -->
+<div id="addContactOverlay" class="modal-overlay">
+	<div id="addContactDiv" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="addContactTitle">
+		<button type="button" class="modal-close" aria-label="Close add contact form" onclick="closeAddContact();">&times;</button>
+		<span id="addContactTitle" class="inner-title">ADD A CONTACT</span>
+		<label for="addFirstName" class="visually-hidden">First Name</label>
+		<input type="text" id="addFirstName" placeholder="First Name" />
+		<label for="addLastName" class="visually-hidden">Last Name</label>
+		<input type="text" id="addLastName" placeholder="Last Name" />
+		<label for="addPhone" class="visually-hidden">Phone</label>
+		<input type="tel" id="addPhone" placeholder="Phone" />
+		<label for="addEmail" class="visually-hidden">Email</label>
+		<input type="email" id="addEmail" placeholder="Email" />
+		<div class="modal-actions">
+			<button type="button" id="addContactButton" class="buttons" onclick="addContact();">Add Contact</button>
+			<button type="button" id="cancelAddButton" class="buttons" onclick="closeAddContact();">Cancel</button>
+		</div>
+		<span id="addContactResult" aria-live="polite"></span>
+	</div>
 </div>
 
 <div id="contactsListDiv" class="reveal">
@@ -60,21 +82,27 @@
 <!-- container -- toggled by updateTableScrollHint() in js/contacts.js -->
 <p id="tableScrollHint" class="hidden">Scroll to see more &rarr;</p>
 
-<!-- Simple inline edit panel, shown/populated by editContact() in js/contacts.js -->
-<div id="editContactDiv" class="hidden">
-	<span id="inner-title">EDIT CONTACT</span>
-	<input type="hidden" id="editContactId" />
-	<label for="editFirstName" class="visually-hidden">First Name</label>
-	<input type="text" id="editFirstName" placeholder="First Name" />
-	<label for="editLastName" class="visually-hidden">Last Name</label>
-	<input type="text" id="editLastName" placeholder="Last Name" />
-	<label for="editPhone" class="visually-hidden">Phone</label>
-	<input type="tel" id="editPhone" placeholder="Phone" />
-	<label for="editEmail" class="visually-hidden">Email</label>
-	<input type="email" id="editEmail" placeholder="Email" />
-	<button type="button" id="saveEditButton" class="buttons" onclick="saveEditContact();">Save Changes</button>
-	<button type="button" id="cancelEditButton" class="buttons" onclick="cancelEditContact();">Cancel</button>
-	<span id="editContactResult" aria-live="polite"></span>
+<!-- Edit panel: hidden until editContact() (js/contacts.js) adds "open" to -->
+<!-- the overlay -- triggered by a row's Edit button, populated from that row's data. -->
+<div id="editContactOverlay" class="modal-overlay">
+	<div id="editContactDiv" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="editContactTitle">
+		<button type="button" class="modal-close" aria-label="Close edit contact form" onclick="cancelEditContact();">&times;</button>
+		<span id="editContactTitle" class="inner-title">EDIT CONTACT</span>
+		<input type="hidden" id="editContactId" />
+		<label for="editFirstName" class="visually-hidden">First Name</label>
+		<input type="text" id="editFirstName" placeholder="First Name" />
+		<label for="editLastName" class="visually-hidden">Last Name</label>
+		<input type="text" id="editLastName" placeholder="Last Name" />
+		<label for="editPhone" class="visually-hidden">Phone</label>
+		<input type="tel" id="editPhone" placeholder="Phone" />
+		<label for="editEmail" class="visually-hidden">Email</label>
+		<input type="email" id="editEmail" placeholder="Email" />
+		<div class="modal-actions">
+			<button type="button" id="saveEditButton" class="buttons" onclick="saveEditContact();">Save Changes</button>
+			<button type="button" id="cancelEditButton" class="buttons" onclick="cancelEditContact();">Cancel</button>
+		</div>
+		<span id="editContactResult" aria-live="polite"></span>
+	</div>
 </div>
 
 <script type="text/javascript" src="js/config.js"></script>

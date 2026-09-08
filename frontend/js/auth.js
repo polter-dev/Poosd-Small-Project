@@ -124,5 +124,83 @@ function requireLogin()
 		userNameSpan.textContent = "Logged in as " + session.firstName + " " + session.lastName;
 	}
 
+	let profileInitials = document.getElementById("profileInitials");
+	if (profileInitials)
+	{
+		let initials = (session.firstName ? session.firstName.charAt(0) : "")
+			+ (session.lastName ? session.lastName.charAt(0) : "");
+		profileInitials.textContent = initials.toUpperCase();
+	}
+
 	return session;
+}
+
+// ---- Profile bubble dropdown (top-right, contacts.html) ----
+// Same open/close idiom as the accessibility widget in js/accessibility.js:
+// a document-level capture-phase click listener for "click outside to
+// close", added/removed only while the menu is actually open.
+
+function toggleProfileMenu()
+{
+	let menu = document.getElementById("profileMenu");
+	if (!menu)
+	{
+		return;
+	}
+
+	if (menu.hidden)
+	{
+		openProfileMenu();
+	}
+	else
+	{
+		closeProfileMenu(false);
+	}
+}
+
+function openProfileMenu()
+{
+	let menu = document.getElementById("profileMenu");
+	let toggleBtn = document.getElementById("profileToggleBtn");
+	menu.hidden = false;
+	toggleBtn.setAttribute("aria-expanded", "true");
+	document.addEventListener("keydown", onProfileMenuKeydown);
+	document.addEventListener("click", onProfileMenuOutsideClick, true);
+}
+
+function closeProfileMenu(returnFocus)
+{
+	let menu = document.getElementById("profileMenu");
+	let toggleBtn = document.getElementById("profileToggleBtn");
+	if (!menu || menu.hidden)
+	{
+		return;
+	}
+
+	menu.hidden = true;
+	toggleBtn.setAttribute("aria-expanded", "false");
+	document.removeEventListener("keydown", onProfileMenuKeydown);
+	document.removeEventListener("click", onProfileMenuOutsideClick, true);
+
+	if (returnFocus !== false)
+	{
+		toggleBtn.focus();
+	}
+}
+
+function onProfileMenuKeydown(event)
+{
+	if (event.key === "Escape")
+	{
+		closeProfileMenu(true);
+	}
+}
+
+function onProfileMenuOutsideClick(event)
+{
+	let wrap = document.getElementById("profileBubbleWrap");
+	if (wrap && !wrap.contains(event.target))
+	{
+		closeProfileMenu(false);
+	}
 }
