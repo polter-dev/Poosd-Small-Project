@@ -49,7 +49,12 @@
 		<div class="results-title">
 			<h2 id="resultsHeading">All contacts</h2>
 			<span id="resultCount"></span>
-			<span id="searchResult" aria-live="polite"></span>
+			<span id="searchResult"></span>
+			<!-- The one live region for this view: js/contacts.js composes -->
+			<!-- "Results, 2 of 24 contacts match ..." into it, so a search   -->
+			<!-- narrowing to a NON-ZERO count is announced too (#resultsHeading -->
+			<!-- and #resultCount are plain text and would otherwise be silent). -->
+			<span id="resultsAnnouncement" class="visually-hidden" role="status" aria-live="polite"></span>
 		</div>
 		<!-- Client-side sort of the returned results only (never the full list) -->
 		<div class="seg" role="group" aria-label="Sort">
@@ -115,7 +120,7 @@
 <!-- Add Contact side panel: hidden until openAddContact() (js/contacts.js) -->
 <!-- adds "open" to the overlay -- triggered by the + buttons above.        -->
 <div id="addContactOverlay" class="modal-overlay">
-	<aside id="addContactDiv" class="panel modal-panel" role="dialog" aria-modal="true" aria-labelledby="addContactTitle">
+	<div id="addContactDiv" class="panel modal-panel" role="dialog" aria-modal="true" aria-labelledby="addContactTitle" tabindex="-1">
 		<div class="panel-head">
 			<h2 id="addContactTitle" class="inner-title">Add contact</h2>
 			<button type="button" class="icon-btn" aria-label="Close add contact form" onclick="closeAddContact();"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
@@ -156,14 +161,14 @@
 				<button type="button" id="cancelAddButton" class="btn btn-outline" onclick="closeAddContact();">Cancel</button>
 			</div>
 		</div>
-	</aside>
+	</div>
 </div>
 
 <!-- Edit side panel: hidden until editContact() (js/contacts.js) adds "open" -->
 <!-- to the overlay -- triggered by a card's Edit button and populated from   -->
 <!-- that card's data.                                                        -->
 <div id="editContactOverlay" class="modal-overlay">
-	<aside id="editContactDiv" class="panel modal-panel" role="dialog" aria-modal="true" aria-labelledby="editContactTitle">
+	<div id="editContactDiv" class="panel modal-panel" role="dialog" aria-modal="true" aria-labelledby="editContactTitle" tabindex="-1">
 		<div class="panel-head">
 			<h2 id="editContactTitle" class="inner-title">Edit contact</h2>
 			<button type="button" class="icon-btn" aria-label="Close edit contact form" onclick="cancelEditContact();"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
@@ -206,20 +211,21 @@
 
 		<div class="panel-actions">
 			<div class="row">
-				<button type="button" id="saveEditButton" class="btn btn-primary" onclick="saveEditContact();">Save Changes</button>
+				<button type="button" id="saveEditButton" class="btn btn-primary" onclick="saveEditContact();">Save changes</button>
 				<button type="button" id="cancelEditButton" class="btn btn-outline" onclick="cancelEditContact();">Cancel</button>
 			</div>
 			<button type="button" id="deleteFromEditButton" class="btn btn-text danger">Delete this contact</button>
 		</div>
-	</aside>
+	</div>
 </div>
 
 <!-- Delete confirmation, replaces confirm(). js/contacts.js toggles "open", -->
 <!-- fills #deleteTitle with "Delete {First Last}?" and focuses Keep.        -->
 <div id="deleteOverlay" class="dialog-overlay">
-	<div id="deleteDialog" class="dialog modal-panel" role="dialog" aria-modal="true" aria-labelledby="deleteTitle" aria-describedby="deleteBody">
+	<div id="deleteDialog" class="dialog modal-panel" role="dialog" aria-modal="true" aria-labelledby="deleteTitle" aria-describedby="deleteBody" tabindex="-1">
 		<h2 id="deleteTitle">Delete this contact?</h2>
 		<p id="deleteBody">This removes the contact from your list. There is no undo.</p>
+		<span id="deleteResult" style="color: var(--danger); font-size: 13px; font-weight: 600;" hidden></span>
 		<div class="dialog-actions">
 			<button type="button" id="deleteKeepButton" class="btn btn-outline">Keep</button>
 			<button type="button" id="deleteConfirmButton" class="btn btn-danger">Delete</button>

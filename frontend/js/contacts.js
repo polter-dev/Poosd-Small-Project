@@ -69,10 +69,10 @@ function searchContacts()
 	searchDebounceTimer = setTimeout(function()
 	{
 		let searchTerm = document.getElementById("searchText").value;
-		let resultSpan = document.getElementById("searchResult");
 
 		showLoadingSkeletons();
-		resultSpan.textContent = "Searching…";
+		setSearchResultText("Searching…", false);
+		announce("Searching…");
 
 		let payload = { userId: currentSession.userId, search: searchTerm };
 		let requestId = ++latestSearchRequestId;
@@ -105,7 +105,7 @@ function searchContacts()
 				totalContactCount = results.length;
 			}
 
-			resultSpan.textContent = (results.length === 0 && searchTerm !== "") ? "No contacts found" : "";
+			setSearchResultText((results.length === 0 && searchTerm !== "") ? "No contacts found" : "", false);
 			renderContacts(results);
 		},
 		function(errorMessage)
@@ -129,11 +129,61 @@ function showRequestError(message)
 	document.getElementById("contactsTableBody").textContent = "";
 	document.getElementById("contactsListDiv").classList.remove("hidden");
 	document.getElementById("emptyState").classList.add("hidden");
-	document.getElementById("searchResult").textContent = message;
+	// DESIGN_GUIDE 1 reserves --danger for failures: `is-error` is what
+	// styles.css colors, so a server error can never be mistaken for the
+	// benign "No contacts found" (both live in this same span).
+	setSearchResultText(message, true);
 	updateResultsHeader();
 	// "0 of 24 match" next to an error message would be reporting a result
 	// we never actually got.
 	document.getElementById("resultCount").textContent = "";
+	announce(message);
+}
+
+// The only writer of #searchResult. `isError` toggles the class styles.css
+// colors with --danger; every non-error render clears it again.
+function setSearchResultText(message, isError)
+{
+	let el = document.getElementById("searchResult");
+	el.textContent = message;
+	el.classList.toggle("is-error", isError === true);
+}
+
+// ---- Result announcements ------------------------------------------------
+// #resultsHeading and #resultCount are plain text outside any live region, so
+// narrowing a search to a non-zero count used to be silent for a screen-reader
+// user. Rather than making each of them live (which would fire two or three
+// separate announcements per render), a single visually-hidden live region
+// carries one composed sentence, and #searchResult is not live itself.
+
+let lastAnnouncement = "";
+
+function announce(message)
+{
+	let region = document.getElementById("resultsAnnouncement");
+	if (!region || message === lastAnnouncement)
+	{
+		return; // repeating identical text would just be chatter
+	}
+
+	lastAnnouncement = message;
+	region.textContent = message;
+}
+
+function announceResults()
+{
+	// "No contacts found" already says everything; otherwise announce the
+	// heading plus the count ("Results, 2 of 24 contacts match ...").
+	let note = document.getElementById("searchResult").textContent;
+	if (note)
+	{
+		announce(note);
+		return;
+	}
+
+	let heading = document.getElementById("resultsHeading").textContent;
+	let count = document.getElementById("resultCount").textContent;
+	announce(count ? heading + ", " + count : heading);
 }
 
 // After a mutation the total can be stale while a search term is active
@@ -260,6 +310,7 @@ function renderContacts(contacts)
 	}
 
 	updateResultsHeader();
+	announceResults();
 }
 
 function buildContactCard(contact, template, onPhone)
@@ -490,20 +541,108 @@ function trapFocusWithinPanel(event, panelEl)
 
 // The modal overlay shows/hides via a CSS class that transitions
 // opacity/visibility (styles.css .modal-overlay/.modal-overlay.open),
-// unlike the old display:none-based hidden panel. Calling .focus() in the
-// same synchronous tick as classList.add("open") silently no-ops -- the
-// browser hasn't committed the style recalc that makes the target
-// focusable yet, and focus() doesn't retry once it fails. A double rAF
-// defers the call until after that recalc has actually happened.
-function focusOnceVisible(el)
+// unlike the old display:none-based hidden panel. Calling .focus() while the
+// overlay still computes visibility:hidden is a silent no-op -- focus() never
+// retries, so the panel opens with focus left on the trigger OUTSIDE it, and
+// trapFocusWithinPanel (which only acts when activeElement is the trap's
+// first/last node) then does nothing and Tab walks into the background,
+// contradicting aria-modal="true".
+//
+// A fixed number of rAFs is a race: it happened to be enough for the panels
+// that do several synchronous DOM writes first and not enough for the Add
+// panel. So poll instead: retry across frames until the element is actually
+// focusable, then verify focus really landed inside the panel before giving
+// up the loop.
+
+let focusAttemptToken = 0;
+const FOCUS_MAX_ATTEMPTS = 90; // ~1.5s at 60fps, then give up rather than spin
+
+function isElementFocusable(el)
 {
-	requestAnimationFrame(function()
+	if (!el || !el.isConnected || el.disabled)
 	{
-		requestAnimationFrame(function()
+		return false;
+	}
+
+	// visibility is inherited, so this catches the closed overlay above it.
+	// offsetParent is null for a display:none subtree (fixed-positioned
+	// elements report null too, hence the position check).
+	let styles = window.getComputedStyle(el);
+	if (styles.visibility === "hidden" || styles.display === "none")
+	{
+		return false;
+	}
+
+	return el.offsetParent !== null || styles.position === "fixed";
+}
+
+// `containerEl` is the panel focus is supposed to end up inside; when given,
+// the loop keeps retrying until document.activeElement is actually in there.
+function focusOnceVisible(el, containerEl)
+{
+	if (!el)
+	{
+		return;
+	}
+
+	let token = ++focusAttemptToken; // a newer open cancels this loop
+	let attempts = 0;
+
+	function attempt()
+	{
+		if (token !== focusAttemptToken)
+		{
+			return;
+		}
+
+		attempts++;
+
+		if (isElementFocusable(el))
 		{
 			el.focus();
-		});
-	});
+
+			let landed = containerEl
+				? containerEl.contains(document.activeElement)
+				: document.activeElement === el;
+			if (landed)
+			{
+				return;
+			}
+		}
+
+		if (attempts < FOCUS_MAX_ATTEMPTS)
+		{
+			requestAnimationFrame(attempt);
+		}
+	}
+
+	requestAnimationFrame(attempt);
+}
+
+// Disabling the in-flight button would drop focus to <body> if it is the
+// focused element, which silently defeats the panel's focus trap. Park focus
+// on the panel itself (tabindex="-1") for the duration instead.
+function setButtonBusy(button, busy, panelEl)
+{
+	if (!button)
+	{
+		return;
+	}
+
+	if (busy)
+	{
+		let hadFocus = document.activeElement === button;
+		button.disabled = true;
+		button.setAttribute("aria-busy", "true");
+		if (hadFocus && panelEl)
+		{
+			panelEl.focus();
+		}
+		return;
+	}
+
+	button.disabled = false;
+	button.removeAttribute("aria-busy");
 }
 
 // ---- Add Contact panel (modal overlay) ----
@@ -525,7 +664,7 @@ function openAddContact(triggerEl)
 	document.addEventListener("click", onAddContactOutsideClick, true);
 
 	addReturnFocusEl = triggerEl || document.activeElement;
-	focusOnceVisible(document.getElementById("addFirstName"));
+	focusOnceVisible(document.getElementById("addFirstName"), document.getElementById("addContactDiv"));
 }
 
 function closeAddContact(returnFocus)
@@ -564,14 +703,37 @@ function onAddContactOutsideClick(event)
 	let panel = document.getElementById("addContactDiv");
 	if (panel && !panel.contains(event.target))
 	{
-		closeAddContact(false);
+		// Same as Escape: dismissing the panel must not strand focus on
+		// <body>, or a keyboard user's next Tab restarts at the top of the page.
+		closeAddContact(true);
 	}
 }
 
+// A double-click (or double-tap on a slow connection) used to fire two
+// AddContact calls and create two rows. Guard the handler and disable the
+// button for the duration; both are re-enabled on success and on error.
+let addContactInFlight = false;
+
 function addContact()
 {
+	if (addContactInFlight)
+	{
+		return;
+	}
+
 	let resultSpan = document.getElementById("addContactResult");
+	let button = document.getElementById("addContactButton");
+	let panel = document.getElementById("addContactDiv");
 	resultSpan.textContent = "";
+
+	addContactInFlight = true;
+	setButtonBusy(button, true, panel);
+
+	function finish()
+	{
+		addContactInFlight = false;
+		setButtonBusy(button, false);
+	}
 
 	let payload = {
 		userId: currentSession.userId,
@@ -583,9 +745,12 @@ function addContact()
 
 	callApi("AddContact", payload, function(response)
 	{
+		finish();
+
 		if (!response.id || response.id < 1)
 		{
 			resultSpan.textContent = response.error || "Could not add contact";
+			button.focus();
 			return;
 		}
 
@@ -604,7 +769,9 @@ function addContact()
 	},
 	function(errorMessage)
 	{
+		finish();
 		resultSpan.textContent = errorMessage;
+		button.focus();
 	});
 }
 
@@ -646,7 +813,7 @@ function openEditContact(triggerEl)
 	// indication the panel opened. Remember what had focus so Cancel/Save
 	// can put it back afterward.
 	editReturnFocusEl = triggerEl || document.activeElement;
-	focusOnceVisible(document.getElementById("editFirstName"));
+	focusOnceVisible(document.getElementById("editFirstName"), document.getElementById("editContactDiv"));
 }
 
 function closeEditContact(returnFocus)
@@ -690,14 +857,35 @@ function onEditContactOutsideClick(event)
 	let panel = document.getElementById("editContactDiv");
 	if (panel && !panel.contains(event.target))
 	{
-		closeEditContact(false);
+		// Same as Escape: restore focus to whatever opened the panel.
+		closeEditContact(true);
 	}
 }
 
+// Same in-flight guard as addContact(): EditContact is idempotent, but a
+// double-click still fires two requests and leaves the button live during both.
+let saveEditInFlight = false;
+
 function saveEditContact()
 {
+	if (saveEditInFlight)
+	{
+		return;
+	}
+
 	let resultSpan = document.getElementById("editContactResult");
+	let button = document.getElementById("saveEditButton");
+	let panel = document.getElementById("editContactDiv");
 	resultSpan.textContent = "";
+
+	saveEditInFlight = true;
+	setButtonBusy(button, true, panel);
+
+	function finish()
+	{
+		saveEditInFlight = false;
+		setButtonBusy(button, false);
+	}
 
 	let payload = {
 		userId: currentSession.userId,
@@ -710,9 +898,12 @@ function saveEditContact()
 
 	callApi("EditContact", payload, function(response)
 	{
+		finish();
+
 		if (response.error)
 		{
 			resultSpan.textContent = response.error;
+			button.focus();
 			return;
 		}
 
@@ -727,7 +918,9 @@ function saveEditContact()
 	},
 	function(errorMessage)
 	{
+		finish();
 		resultSpan.textContent = errorMessage;
+		button.focus();
 	});
 }
 
@@ -735,6 +928,9 @@ function saveEditContact()
 
 let pendingDeleteContact = null;
 let deleteReturnFocusEl = null;
+// True while DeleteContact is in flight: the dialog stays open and both of its
+// buttons stay disabled so the row cannot be deleted twice.
+let deleteInFlight = false;
 // Set when the dialog was opened from inside the edit panel: "Keep" then puts
 // the user back where they were instead of dropping them on the bare grid.
 let deleteCameFromEditPanel = false;
@@ -788,15 +984,18 @@ function openDeleteDialog(contact, triggerEl)
 	document.addEventListener("keydown", onDeleteDialogKeydown);
 	document.addEventListener("click", onDeleteDialogOutsideClick, true);
 
-	focusOnceVisible(document.getElementById("deleteKeepButton"));
+	document.getElementById("deleteResult").textContent = "";
+	document.getElementById("deleteResult").hidden = true;
+
+	focusOnceVisible(document.getElementById("deleteKeepButton"), document.getElementById("deleteDialog"));
 }
 
 function closeDeleteDialog(returnFocus)
 {
 	let overlay = document.getElementById("deleteOverlay");
-	if (!overlay.classList.contains("open"))
+	if (!overlay.classList.contains("open") || deleteInFlight)
 	{
-		return;
+		return; // the dialog stays up until the delete resolves
 	}
 
 	overlay.classList.remove("open");
@@ -819,7 +1018,7 @@ function closeDeleteDialog(returnFocus)
 		// Back to the edit panel the user was in, focus on the button that
 		// opened the dialog.
 		editContact(contact, null);
-		focusOnceVisible(document.getElementById("deleteFromEditButton"));
+		focusOnceVisible(document.getElementById("deleteFromEditButton"), document.getElementById("editContactDiv"));
 	}
 	else if (deleteReturnFocusEl)
 	{
@@ -851,28 +1050,58 @@ function onDeleteDialogOutsideClick(event)
 
 function confirmDeleteContact()
 {
-	if (!pendingDeleteContact)
+	if (!pendingDeleteContact || deleteInFlight)
 	{
 		return;
 	}
 
 	let payload = { userId: currentSession.userId, id: pendingDeleteContact.id };
+	let dialog = document.getElementById("deleteDialog");
+	let confirmButton = document.getElementById("deleteConfirmButton");
+	let keepButton = document.getElementById("deleteKeepButton");
+	let resultSpan = document.getElementById("deleteResult");
 
-	// The card that opened the dialog is about to disappear, so focus has to
-	// land somewhere that will still exist after the re-render.
-	pendingDeleteContact = null;
-	deleteCameFromEditPanel = false;
-	deleteReturnFocusEl = null;
-	closeDeleteDialog(false);
-	document.getElementById("searchText").focus();
+	resultSpan.textContent = "";
+	resultSpan.hidden = true;
+
+	// The dialog stays open until the server answers. Writing the failure into
+	// #searchResult (as this used to) put it in the results header, above 24
+	// cards that had not changed, long after focus had moved to the search box
+	// -- where the next keystroke wiped it. Failures belong on the control the
+	// user pressed.
+	deleteInFlight = true;
+	setButtonBusy(confirmButton, true, dialog);
+	setButtonBusy(keepButton, true, dialog);
+
+	function failed(message)
+	{
+		deleteInFlight = false;
+		setButtonBusy(confirmButton, false);
+		setButtonBusy(keepButton, false);
+		resultSpan.textContent = message;
+		resultSpan.hidden = false;
+		focusOnceVisible(confirmButton, dialog);
+	}
 
 	callApi("DeleteContact", payload, function(response)
 	{
+		deleteInFlight = false;
+		setButtonBusy(confirmButton, false);
+		setButtonBusy(keepButton, false);
+
 		if (response.error)
 		{
-			document.getElementById("searchResult").textContent = response.error;
+			failed(response.error);
 			return;
 		}
+
+		// The card that opened the dialog is about to disappear, so focus has
+		// to land somewhere that will still exist after the re-render.
+		pendingDeleteContact = null;
+		deleteCameFromEditPanel = false;
+		deleteReturnFocusEl = null;
+		closeDeleteDialog(false);
+		document.getElementById("searchText").focus();
 
 		showToast("Contact deleted");
 		searchContacts(); // refresh list from server
@@ -880,6 +1109,6 @@ function confirmDeleteContact()
 	},
 	function(errorMessage)
 	{
-		document.getElementById("searchResult").textContent = errorMessage;
+		failed(errorMessage);
 	});
 }
