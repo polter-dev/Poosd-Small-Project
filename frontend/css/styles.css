@@ -315,6 +315,16 @@ main
 	color: var(--text-muted);
 }
 
+/* DESIGN_GUIDE 1 reserves --danger for failures. js/contacts.js sets
+   .is-error only when the request itself failed, so "could not reach the
+   server" can never be read as the benign "No contacts found" that shares
+   this span. */
+#searchResult.is-error
+{
+	color: var(--danger);
+	font-weight: 600;
+}
+
 /* ---- sort segmented toggle ---- */
 
 .seg
@@ -584,7 +594,9 @@ main
 .field-row
 {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	/* minmax(0, 1fr), not `1fr`: an auto minimum would let a long label or
+	   value widen the two columns past their share of the panel. */
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px;
 }
 
@@ -652,6 +664,17 @@ main
 
 .dialog p { margin: 0; color: var(--text-muted); }
 
+/* Delete failure, shown on the control the user pressed. Matches the 13px/600
+   of the other result spans (#searchResult, #loginResult); the .dialog flex
+   `gap` already supplies the spacing, so no margin of its own. */
+#deleteResult
+{
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--danger);
+}
+
 .dialog-actions
 {
 	display: flex;
@@ -710,6 +733,18 @@ main
 	align-items: center;
 	justify-content: center;
 	padding: 40px 20px;
+}
+
+/* index.html wraps both auth cards in a single <main>; it is the flex item
+   .auth-page centres, so it carries the card's own width constraint. The
+   generic `main` rule above is the contacts-page content column -- reset its
+   gutter here, or the card would sit 56px narrower than the 420px spec. */
+.auth-main
+{
+	width: 100%;
+	max-width: 420px;
+	padding: 0;
+	gap: 0;
 }
 
 .auth-card
@@ -782,13 +817,18 @@ main
 	color: var(--text-muted);
 }
 
+/* WCAG 1.4.1: --accent-soft on --text-muted body copy is only 1.86:1, well
+   under the 3:1 that would let colour carry the link on its own, so the
+   underline is always on and colour is never the sole cue. Hover changes the
+   colour instead of adding the underline. */
 .switchText a
 {
 	color: var(--accent-soft);
-	text-decoration: none;
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
-.switchText a:hover { text-decoration: underline; }
+.switchText a:hover { color: var(--accent-hover); }
 
 #loginResult,
 #registerResult
@@ -796,6 +836,15 @@ main
 	font-size: 13px;
 	font-weight: 600;
 	color: var(--danger);
+}
+
+/* js/auth.js adds .is-success for the confirmations; without this they render
+   in --danger and read as failures. --accent-soft is the one token that is
+   neither the failure colour nor the muted default, in both palettes. */
+#loginResult.is-success,
+#registerResult.is-success
+{
+	color: var(--accent-soft);
 }
 
 /* ==========================================================================
@@ -897,7 +946,10 @@ html.js-reveal-enabled .reveal.is-visible
 
 	.results-head { align-items: center; }
 
-	.grid { grid-template-columns: 1fr; }
+	/* minmax(0, 1fr) -- a bare `1fr` is minmax(auto, 1fr), so the track's
+	   automatic minimum is the widest card's min-content and one very long
+	   unbroken name pushes every card in the grid past the viewport. */
+	.grid { grid-template-columns: minmax(0, 1fr); }
 
 	.card
 	{
@@ -937,5 +989,6 @@ html.js-reveal-enabled .reveal.is-visible
 	.icon-btn { width: 44px; height: 44px; }
 
 	.auth-card { padding: 28px 22px; }
-	.auth-card #title { font-size: 28px; }
+	.auth-card #title,
+	.auth-card .auth-title { font-size: 28px; }
 }
