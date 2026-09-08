@@ -327,7 +327,10 @@ input[type="email"]:focus-visible,
 
 .modal-actions .buttons
 {
-	margin: 10px 0;
+	/* .modal-actions already provides gap: 10px between items, including
+	   between wrapped rows -- a nonzero vertical margin here would double
+	   that spacing on narrow screens where the two buttons wrap. */
+	margin: 0;
 }
 
 @media (prefers-reduced-motion: reduce)

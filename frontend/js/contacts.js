@@ -129,6 +129,60 @@ function updateTableScrollHint()
 
 window.addEventListener("resize", updateTableScrollHint);
 
+// Keeps Tab/Shift+Tab from leaving `panelEl` while it's open. Both modals
+// declare role="dialog" aria-modal="true", which asserts that background
+// content is unreachable -- without this, Tab from the last field still
+// walks straight into contactsListDiv's Edit/Delete buttons behind the
+// backdrop, since aria-modal is just an ARIA attribute, not a browser
+// behavior; nothing enforces it unless this does.
+function trapFocusWithinPanel(event, panelEl)
+{
+	if (event.key !== "Tab")
+	{
+		return;
+	}
+
+	let focusable = panelEl.querySelectorAll(
+		'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+	);
+	if (focusable.length === 0)
+	{
+		return;
+	}
+
+	let first = focusable[0];
+	let last = focusable[focusable.length - 1];
+
+	if (event.shiftKey && document.activeElement === first)
+	{
+		event.preventDefault();
+		last.focus();
+	}
+	else if (!event.shiftKey && document.activeElement === last)
+	{
+		event.preventDefault();
+		first.focus();
+	}
+}
+
+// The modal overlay shows/hides via a CSS class that transitions
+// opacity/visibility (styles.css .modal-overlay/.modal-overlay.open),
+// unlike the old display:none-based hidden panel. Calling .focus() in the
+// same synchronous tick as classList.add("open") silently no-ops -- the
+// browser hasn't committed the style recalc that makes the target
+// focusable yet, and focus() doesn't retry once it fails. A double rAF
+// defers the call until after that recalc has actually happened.
+function focusOnceVisible(el)
+{
+	requestAnimationFrame(function()
+	{
+		requestAnimationFrame(function()
+		{
+			el.focus();
+		});
+	});
+}
+
 // ---- Add Contact panel (modal overlay) ----
 // Same open/close idiom as the profile menu in js/auth.js and the
 // accessibility widget in js/accessibility.js: Escape and click-outside are
@@ -136,18 +190,21 @@ window.addEventListener("resize", updateTableScrollHint);
 // capture-phase click listener.
 
 let addReturnFocusEl = null;
+let addContactCloseTimer = null;
 
 function openAddContact(triggerEl)
 {
 	closeEditContact(false); // only one form visible at a time
+	clearTimeout(addContactCloseTimer);
 
 	document.getElementById("addContactResult").textContent = "";
 	document.getElementById("addContactOverlay").classList.add("open");
+	document.getElementById("openAddContactBtn").setAttribute("aria-expanded", "true");
 	document.addEventListener("keydown", onAddContactKeydown);
 	document.addEventListener("click", onAddContactOutsideClick, true);
 
 	addReturnFocusEl = triggerEl || document.activeElement;
-	document.getElementById("addFirstName").focus();
+	focusOnceVisible(document.getElementById("addFirstName"));
 }
 
 function closeAddContact(returnFocus)
@@ -158,7 +215,9 @@ function closeAddContact(returnFocus)
 		return;
 	}
 
+	clearTimeout(addContactCloseTimer);
 	overlay.classList.remove("open");
+	document.getElementById("openAddContactBtn").setAttribute("aria-expanded", "false");
 	document.removeEventListener("keydown", onAddContactKeydown);
 	document.removeEventListener("click", onAddContactOutsideClick, true);
 
@@ -174,7 +233,10 @@ function onAddContactKeydown(event)
 	if (event.key === "Escape")
 	{
 		closeAddContact();
+		return;
 	}
+
+	trapFocusWithinPanel(event, document.getElementById("addContactDiv"));
 }
 
 function onAddContactOutsideClick(event)
@@ -207,13 +269,21 @@ function addContact()
 			return;
 		}
 
+		// Announce success before closing -- the modal closing on its own
+		// isn't feedback a screen-reader (or a sighted user who blinks) can
+		// rely on. aria-live picks this up immediately; the brief delay
+		// before closeAddContact() gives sighted users a moment to see it too.
+		resultSpan.textContent = "Contact added";
 		document.getElementById("addFirstName").value = "";
 		document.getElementById("addLastName").value = "";
 		document.getElementById("addPhone").value = "";
 		document.getElementById("addEmail").value = "";
 
-		closeAddContact();
 		searchContacts(); // refresh list from server
+		addContactCloseTimer = setTimeout(function()
+		{
+			closeAddContact();
+		}, 900);
 	},
 	function(errorMessage)
 	{
@@ -252,7 +322,7 @@ function openEditContact(triggerEl)
 	// indication the panel opened. Remember what had focus so Cancel/Save
 	// can put it back afterward.
 	editReturnFocusEl = triggerEl || document.activeElement;
-	document.getElementById("editFirstName").focus();
+	focusOnceVisible(document.getElementById("editFirstName"));
 }
 
 function closeEditContact(returnFocus)
@@ -285,7 +355,10 @@ function onEditContactKeydown(event)
 	if (event.key === "Escape")
 	{
 		closeEditContact(true);
+		return;
 	}
+
+	trapFocusWithinPanel(event, document.getElementById("editContactDiv"));
 }
 
 function onEditContactOutsideClick(event)
