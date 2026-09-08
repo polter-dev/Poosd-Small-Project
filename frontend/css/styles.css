@@ -437,25 +437,43 @@ main
 /* chevron affordance: desktop keeps the icon buttons, phone swaps them in */
 .card-chevron { display: none; color: var(--text-muted); }
 
-/* The avatar and the two icon buttons are fixed chrome that does not shrink
-   with the column, so in the narrow half of each column tier the name -- the
-   primary content -- was squeezed to as little as 83px and ordinary names
-   ("Ava Nguyen", "Anais Dupont") ellipsized. 280px of card content box is
-   what a single row needs to still give the name 140px
-   (40 avatar + 12 + 140 + 12 + 32 + 12 + 32); below that, drop the buttons
-   to a second row and hand the name the full width instead. Keyed to the
-   CARD, not the viewport, so it fires at the narrow end of the 2- and
-   3-column tiers alike and leaves the 960/600 breakpoints untouched. */
+/* GUIDE 4 wants the head as one row: 40px circle + name + two 32px icon
+   buttons. That chrome costs the name 140px and does not shrink with the
+   column, so in a narrow card the name -- the primary content -- was
+   squeezed to as little as 83px and ordinary names ellipsized. Below the
+   width where the one-row head still fits a real name, the buttons drop to
+   a second row and the name takes the full width (140px of chrome becomes
+   52px).
+
+   The 480px figure is not arbitrary. Switching layout changes the name box
+   by exactly 88px (content - 52 vs content - 140), so a name whose natural
+   width lands inside that 88px window would ellipsize on the WIDE side of
+   the switch and not the narrow side -- dragging the window wider would
+   collapse names. Measured against the seed, the widest non-pathological
+   name is "Priya Chandrasekaran-Venkataraman" at 327px, and the next width
+   up is the deliberately pathological 54-char row at 512px. Any threshold
+   in [467, 564) therefore puts the window in that empty gap; 480 sits
+   inside it with headroom at both ends. Every real name survives the
+   switch, and only the 54-char row ellipsizes -- at every width, as it
+   should.
+
+   Keyed to the CARD, not the viewport, so it tracks the narrow end of each
+   column tier and leaves the 960/600 breakpoints untouched. */
 .card { container-type: inline-size; }
 
-@container (max-width: 279.98px)
+@container (max-width: 479.98px)
 {
+	/* Tighter than the 12px one-row rhythm: the 32px buttons already carry
+	   ~8px of optical padding around a 15px icon, so a full step above and
+	   below them reads as a hole. 4/8 are on the GUIDE 3 spacing scale. */
+	.card { gap: 8px; }
+
 	.card-head
 	{
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr) auto auto;
 		align-items: center;
-		gap: 8px 12px;
+		gap: 4px 12px;
 	}
 
 	.card-head .avatar { grid-area: 1 / 1; }
