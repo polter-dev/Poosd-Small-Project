@@ -35,6 +35,11 @@ function showRegisterForm()
 	// if the user switches back to it later.
 	clearResult("loginResult");
 	clearResult("registerResult");
+
+	// The link that triggered this is inside the card we just hid, so the
+	// browser would otherwise drop focus to <body> (WCAG 2.4.3). Move focus
+	// into the newly shown card.
+	focusFirstInCard("registerFirstName");
 }
 
 function showLoginForm()
@@ -44,6 +49,17 @@ function showLoginForm()
 
 	clearResult("loginResult");
 	clearResult("registerResult");
+
+	focusFirstInCard("loginUsername");
+}
+
+function focusFirstInCard(elementId)
+{
+	let el = document.getElementById(elementId);
+	if (el)
+	{
+		el.focus();
+	}
 }
 
 function clearResult(elementId)
@@ -66,7 +82,7 @@ function setResultError(resultSpan, message)
 
 // Success messages use a distinct class (is-success) so they can be styled
 // differently from the default danger-red #loginResult/#registerResult
-// text -- see report for the styles.css hook this still needs.
+// text -- see styles.css's #loginResult.is-success / #registerResult.is-success.
 function setResultSuccess(resultSpan, message)
 {
 	resultSpan.classList.add("is-success");
@@ -141,7 +157,7 @@ function doRegister()
 		// Distinct from the error path (no is-success class there) so a
 		// screen reader / sighted user can tell success from failure via
 		// the existing aria-live region, even though we redirect right
-		// after -- see report for the styles.css hook this still needs.
+		// after.
 		setResultSuccess(resultSpan, "Account created! Logging you in...");
 		saveSession(response.id, response.firstName, response.lastName);
 		window.location.href = "contacts.html";
@@ -176,7 +192,8 @@ function requireLogin()
 		// user typed at registration, so this is the same class of bug as
 		// issue #82 (a name like "<img src=x onerror=...>" would otherwise
 		// execute on every page load).
-		userNameSpan.textContent = "Logged in as " + session.firstName + " " + session.lastName;
+		let fullName = [session.firstName, session.lastName].filter(Boolean).join(" ");
+		userNameSpan.textContent = "Logged in as " + fullName;
 	}
 
 	let profileInitials = document.getElementById("profileInitials");
@@ -221,6 +238,7 @@ function openProfileMenu()
 	toggleBtn.setAttribute("aria-expanded", "true");
 	document.addEventListener("keydown", onProfileMenuKeydown);
 	document.addEventListener("click", onProfileMenuOutsideClick, true);
+	menu.addEventListener("focusout", onProfileMenuFocusOut);
 }
 
 function closeProfileMenu(returnFocus)
@@ -236,6 +254,7 @@ function closeProfileMenu(returnFocus)
 	toggleBtn.setAttribute("aria-expanded", "false");
 	document.removeEventListener("keydown", onProfileMenuKeydown);
 	document.removeEventListener("click", onProfileMenuOutsideClick, true);
+	menu.removeEventListener("focusout", onProfileMenuFocusOut);
 
 	if (returnFocus !== false)
 	{
@@ -258,4 +277,35 @@ function onProfileMenuOutsideClick(event)
 	{
 		closeProfileMenu(false);
 	}
+}
+
+// Tab (or Shift+Tab) out of the menu should close it too, but focus moving
+// BETWEEN items inside the menu fires focusout/focusin on the same tick and
+// must not be treated as "left the menu". relatedTarget tells us where focus
+// is going; defer with a timeout as a fallback for browsers/cases where
+// relatedTarget isn't reliably populated (e.g. focus lost to nothing).
+function onProfileMenuFocusOut(event)
+{
+	let menu = document.getElementById("profileMenu");
+	if (!menu)
+	{
+		return;
+	}
+
+	// Focus moving within the menu, or back to the toggle button itself
+	// (e.g. a mousedown on it, which toggleProfileMenu's click handler
+	// already deals with), isn't "leaving" the widget.
+	let wrap = document.getElementById("profileBubbleWrap");
+	if (event.relatedTarget && wrap && wrap.contains(event.relatedTarget))
+	{
+		return;
+	}
+
+	window.setTimeout(function()
+	{
+		if (!menu.hidden && !menu.contains(document.activeElement))
+		{
+			closeProfileMenu(false);
+		}
+	}, 0);
 }
