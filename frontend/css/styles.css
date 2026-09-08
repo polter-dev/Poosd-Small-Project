@@ -1,472 +1,818 @@
+/* ==========================================================================
+   Contacts - design system
+   See ref_frontend/handoff/DESIGN_GUIDE.md. Every colour lives in :root;
+   nothing below this block may hard-code a hex.
+   ========================================================================== */
+
 :root
 {
-	/* https://colorhunt.co/palette/37353e44444e715a5ad3dad9 */
-	--color-darkest: #37353E;
-	--color-dark: #44444E;
-	/* darkened from #715A5A so light text on it (buttons, table header) clears */
-	/* the WCAG AA 4.5:1 text-contrast minimum (was 4.47:1, now 4.92:1) */
-	--color-accent: #6a5454;
-	--color-accent-hover: #7d6565;
-	--color-light: #D3DAD9;
-	--shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.28), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
-	--shadow-button: 0 2px 6px rgba(0, 0, 0, 0.25);
+	/* --- palette (DESIGN_GUIDE section 1) --- */
+	--bg: #18181B;
+	--surface: #232327;
+	--raised: #2E2E34;
+	--raised-hover: #3A3A41;
+	--border-hover: #4A4A55;
+	--text: #E9E9EC;
+	--text-muted: #9A9AA5;
+	--accent: #9DB0CC;
+	--accent-hover: #B3C3DA;
+	--accent-soft: #C9D4E6;
+	--danger: #E0A3A3;
+	--danger-hover: #ECB8B8;
+	--on-accent: #18181B;
+	--scrim: rgba(24, 24, 27, .55);
+
+	/* --- type --- */
+	--font-display: 'Caprasimo', Georgia, serif;
+	--font-body: 'Figtree', system-ui, -apple-system, sans-serif;
+
+	/* --- shape / elevation --- */
+	--shadow-float: 0 12px 32px rgba(0, 0, 0, .4);
+	--shadow-panel: -12px 0 32px rgba(0, 0, 0, .4);
+	--r-card: 24px;
+	--r-dialog: 28px;
+	--r-menu: 16px;
+	--r-pill: 999px;
+
+	/* --- legacy aliases: css/accessibility.css reads these --color-* names --- */
+	--color-darkest: var(--bg);
+	--color-dark: var(--raised);
+	--color-accent: var(--accent);
+	--color-accent-hover: var(--accent-hover);
+	--color-light: var(--text);
 }
 
-*
-{
-	box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body
 {
-	background:
-		radial-gradient(circle at 15% 0%, rgba(106, 84, 84, 0.25), transparent 45%),
-		radial-gradient(circle at 85% 100%, rgba(106, 84, 84, 0.18), transparent 45%),
-		var(--color-darkest);
-	background-color: var(--color-darkest);
-	font-family: 'Ubuntu', sans-serif;
-	line-height: 1.5;
 	margin: 0;
-	padding: 32px 16px 48px 16px;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-body);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+button, input { font: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent-soft); }
+
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+svg { display: block; flex: none; }
+
+.visually-hidden
+{
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+	padding: 0;
+	margin: -1px;
+}
+
+.hidden { display: none !important; }
+
+/* ==========================================================================
+   Top bar
+   ========================================================================== */
+
+.topbar
+{
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	padding: 16px 28px;
+	border-bottom: 1px solid var(--raised);
 }
 
 #title
 {
-	font-size: 40px;
-	font-weight: 700;
-	letter-spacing: 0.5px;
-	width: 100%;
-	margin: 0 0 28px 0;
-	text-align: center;
-	color: var(--color-light);
-	overflow-wrap: break-word;
-	box-sizing: border-box;
-}
-
-.inner-title
-{
-	display: block;
-	font-size: 0.75em;
-	font-weight: 700;
-	letter-spacing: 1.5px;
-	width: 100%;
-	text-align: center;
-	margin: 0 0 20px 0;
-	padding-bottom: 12px;
-	border-bottom: 1px solid rgba(211, 218, 217, 0.15);
-	color: var(--color-light);
-	opacity: 0.85;
-}
-
-/* ---- shared panel look (login, register, search, contacts list) ---- */
-#loginDiv,
-#registerDiv,
-#searchDiv,
-#contactsListDiv
-{
+	font-family: var(--font-display);
+	font-weight: 400;
 	font-size: 20px;
-	width: 70%;
-	max-width: 800px;
-	margin: 0 auto 24px auto;
-	padding: 28px;
-	background-color: var(--color-dark);
-	border: 1px solid rgba(255, 255, 255, 0.06);
-	border-radius: 12px;
-	box-shadow: var(--shadow-panel);
-	box-sizing: border-box;
-	text-align: center;
-	color: var(--color-light);
+	margin: 0;
 }
 
-/* ---- account controls (profile bubble + add-contact button, fixed top-right) ---- */
 #accountControls
 {
-	position: fixed;
-	top: 20px;
-	right: 20px;
-	z-index: 800;
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 18px;
+	margin-left: auto;
 }
 
-.fab
-{
-	width: 44px;
-	height: 44px;
-	flex: 0 0 auto;
-	border-radius: 50%;
-	border: none;
-	background-color: var(--color-accent);
-	color: var(--color-light);
-	box-shadow: var(--shadow-button);
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 22px;
-	font-weight: 700;
-	line-height: 1;
-	transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-}
+/* ---- search pill ---- */
 
-.fab:hover
+.search
 {
-	background-color: var(--color-accent-hover);
-	transform: translateY(-1px);
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-.fab:active
-{
-	transform: translateY(0);
-	box-shadow: var(--shadow-button);
-}
-
-#profileBubbleWrap
-{
+	flex: 1;
+	max-width: 420px;
+	margin-left: auto;
 	position: relative;
 }
 
-.profile-bubble
-{
-	width: 44px;
-	height: 44px;
-	border-radius: 50%;
-	border: none;
-	background-color: var(--color-dark);
-	color: var(--color-light);
-	box-shadow: var(--shadow-button);
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 16px;
-	font-weight: 700;
-	letter-spacing: 0.5px;
-	transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.profile-bubble:hover
-{
-	background-color: var(--color-accent);
-	transform: translateY(-1px);
-}
-
-#profileMenu
+.search svg
 {
 	position: absolute;
-	top: calc(100% + 10px);
-	right: 0;
-	min-width: 220px;
-	background-color: var(--color-dark);
-	color: var(--color-light);
-	border: 1px solid rgba(255, 255, 255, 0.06);
-	border-radius: 10px;
-	padding: 14px;
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-	box-sizing: border-box;
-	text-align: center;
+	left: 14px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--text-muted);
+	pointer-events: none;
 }
 
-#profileMenu[hidden]
-{
-	display: none;
-}
-
-#profileMenu #userName
-{
-	display: block;
-	font-size: 0.75em;
-	font-weight: 700;
-	letter-spacing: 0.3px;
-	margin-bottom: 10px;
-	overflow-wrap: break-word;
-}
-
-#profileMenu .buttons
+#searchText
 {
 	width: 100%;
+	padding: 9px 16px 9px 38px;
+	border-radius: var(--r-pill);
+	border: 1px solid var(--raised);
+	background: var(--surface);
+	color: var(--text);
+	caret-color: var(--accent);
+	transition: border-color .15s ease;
 }
 
-input[type="text"],
-input[type="password"],
-input[type="tel"],
-input[type="email"]
-{
-	border-radius: 25px;
-	border: 1px solid var(--color-accent);
-	background-color: var(--color-light);
-	color: var(--color-darkest);
-	text-align: center;
-	width: 80%;
-	max-width: 400px;
-	padding: 10px 0;
-	margin: 6px auto;
-	font-family: 'Ubuntu', sans-serif;
-	font-size: 0.8em;
-	display: block;
-	box-sizing: border-box;
-	transition: box-shadow 0.15s ease, border-color 0.15s ease;
-}
+#searchText::placeholder { color: var(--text-muted); }
+#searchText:hover { border-color: var(--border-hover); }
+#searchText:focus-visible { border-color: var(--accent); outline-offset: 0; }
 
-input[type="text"]:hover,
-input[type="password"]:hover,
-input[type="tel"]:hover,
-input[type="email"]:hover
-{
-	border-color: var(--color-accent-hover);
-}
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
 
-input[type="text"]:focus,
-input[type="password"]:focus,
-input[type="tel"]:focus,
-input[type="email"]:focus
-{
-	border-color: var(--color-light);
-	box-shadow: 0 0 0 3px rgba(211, 218, 217, 0.25);
-	outline: none;
-}
-
-input[type="text"]::placeholder,
-input[type="password"]::placeholder,
-input[type="tel"]::placeholder,
-input[type="email"]::placeholder
-{
-	/* full-opacity color-dark measures 6.78:1 on the light input background;
-	   the previous opacity:0.6 flattened that to ~2.79:1, well under the
-	   WCAG AA 4.5:1 minimum for text */
-	color: var(--color-dark);
-}
-
-input[type="text"]:focus-visible,
-input[type="password"]:focus-visible,
-input[type="tel"]:focus-visible,
-input[type="email"]:focus-visible,
-.buttons:focus-visible,
-.switchText a:focus-visible
-{
-	outline: 3px solid var(--color-light);
-	outline-offset: 2px;
-}
-
-.hidden
-{
-	display: none;
-}
-
-.buttons
-{
-	font-size: 0.9em;
-	font-weight: 700;
-	letter-spacing: 0.2px;
-	border-radius: 25px;
-	border: none;
-	padding: 10px 20px;
-	margin: 10px auto;
-	font-family: 'Ubuntu', sans-serif;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 44px; /* tap-target guideline */
-	box-sizing: border-box;
-	background-color: var(--color-accent);
-	color: var(--color-light);
-	box-shadow: var(--shadow-button);
-	transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.buttons:hover
-{
-	background-color: var(--color-accent-hover);
-	transform: translateY(-1px);
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-.buttons:active
-{
-	transform: translateY(0);
-	box-shadow: var(--shadow-button);
-}
-
-.buttons.small
+.btn
 {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 0.7em;
-	padding: 6px 14px;
-	min-height: 36px; /* smaller than the 44px guideline -- these sit inline */
-	box-sizing: border-box;      /* per table row next to another button;   */
-	margin: 2px;                 /* full 44px here would bloat every row.   */
+	gap: 6px;
+	white-space: nowrap;
+	border: 1px solid transparent;
+	border-radius: var(--r-pill);
+	padding: 10px 18px;
+	font-family: var(--font-display);
+	font-size: 14px;
+	line-height: 1.2;
+	color: var(--text);
+	background: transparent;
+	min-height: 40px;
+	transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 
-#cancelEditButton,
-#cancelAddButton
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-outline { border-color: var(--raised-hover); }
+.btn-outline:hover { background: var(--raised); }
+.btn-danger { background: var(--danger); color: var(--on-accent); }
+.btn-danger:hover { background: var(--danger-hover); }
+
+.btn-text
 {
-	background-color: transparent;
-	color: var(--color-light);
-	box-shadow: none;
-	border: 1px solid var(--color-accent);
+	font-family: var(--font-body);
+	font-weight: 600;
+	font-size: 13px;
+	padding: 8px;
+	min-height: 40px;
 }
 
-#cancelEditButton:hover,
-#cancelAddButton:hover
+.btn-text.danger { color: var(--danger); }
+.btn-text:hover { background: var(--raised); }
+
+.btn-block { width: 100%; }
+
+.icon-btn
 {
-	background-color: rgba(211, 218, 217, 0.08);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--r-pill);
+	background: transparent;
+	color: var(--text-muted);
+	transition: background-color .15s ease, color .15s ease;
 }
 
-.modal-actions
+.icon-btn:hover { background: var(--raised); color: var(--text); }
+.icon-btn.lg { width: 40px; height: 40px; border: 1px solid var(--raised); }
+
+/* ---- account bubble + menu ---- */
+
+.profile-bubble
+{
+	width: 40px;
+	height: 40px;
+	flex: none;
+	border: 0;
+	border-radius: var(--r-pill);
+	background: var(--raised);
+	color: var(--text);
+	font-weight: 700;
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color .15s ease;
+}
+
+.profile-bubble:hover { background: var(--raised-hover); }
+
+#profileBubbleWrap { position: relative; }
+
+#profileMenu
+{
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	z-index: 800;
+	min-width: 200px;
+	background: var(--raised);
+	border: 1px solid var(--border-hover);
+	border-radius: var(--r-menu);
+	padding: 6px;
+	box-shadow: var(--shadow-float);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+#profileMenu[hidden] { display: none; }
+
+#profileMenu #userName
+{
+	display: block;
+	font-size: 12px;
+	color: var(--text-muted);
+	padding: 8px 12px 4px;
+}
+
+#profileMenu .menu-item
+{
+	text-align: left;
+	background: transparent;
+	border: 0;
+	border-radius: 10px;
+	padding: 8px 12px;
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--text);
+	transition: background-color .15s ease;
+}
+
+#profileMenu .menu-item:hover { background: var(--raised-hover); }
+
+/* ==========================================================================
+   Results header
+   ========================================================================== */
+
+main
+{
+	padding: 22px 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.results-head
 {
 	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
 	flex-wrap: wrap;
-	gap: 10px;
-	justify-content: center;
 }
 
-.modal-actions .buttons
+.results-head h2
 {
-	/* .modal-actions already provides gap: 10px between items, including
-	   between wrapped rows -- a nonzero vertical margin here would double
-	   that spacing on narrow screens where the two buttons wrap. */
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-size: 26px;
 	margin: 0;
 }
 
-@media (prefers-reduced-motion: reduce)
+.results-title
 {
-	.buttons,
-	.fab,
-	.profile-bubble
-	{
-		transition: background-color 0.15s ease;
-	}
-
-	.buttons:hover,
-	.fab:hover,
-	.profile-bubble:hover
-	{
-		transform: none;
-	}
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	flex-wrap: wrap;
 }
+
+#searchResult,
+#resultCount
+{
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+/* ---- sort segmented toggle ---- */
+
+.seg
+{
+	display: inline-flex;
+	border: 1px solid var(--raised);
+	border-radius: var(--r-pill);
+	overflow: hidden;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.seg button
+{
+	display: flex;
+	white-space: nowrap;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 14px;
+	border: 0;
+	background: transparent;
+	color: var(--text-muted);
+	transition: background-color .15s ease, color .15s ease;
+}
+
+.seg button:hover { background: var(--surface); }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--text); }
+
+/* ==========================================================================
+   Card grid
+   ========================================================================== */
+
+.grid
+{
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.card
+{
+	background: var(--surface);
+	border: 1px solid var(--raised);
+	border-radius: var(--r-card);
+	padding: 18px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: border-color .15s ease;
+}
+
+.card:hover,
+.card:focus-within { border-color: var(--border-hover); }
+
+.card-head
+{
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.avatar
+{
+	width: 40px;
+	height: 40px;
+	flex: none;
+	border-radius: var(--r-pill);
+	background: var(--raised);
+	color: var(--accent);
+	font-weight: 700;
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.avatar.lg { width: 56px; height: 56px; font-size: 17px; }
+
+.card-name
+{
+	flex: 1;
+	min-width: 0;
+	font-family: var(--font-display);
+	font-size: 17px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.card-body
+{
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+.card-body span
+{
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* chevron affordance: desktop keeps the icon buttons, phone swaps them in */
+.card-chevron { display: none; color: var(--text-muted); }
+
+/* ---- loading skeletons ---- */
+
+.card.skeleton .bar
+{
+	height: 10px;
+	border-radius: var(--r-pill);
+	background: var(--raised);
+}
+
+.card.skeleton .bar.name { height: 14px; width: 110px; }
+
+/* ==========================================================================
+   Empty state
+   ========================================================================== */
+
+.empty
+{
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 14px;
+	padding: 64px 24px;
+}
+
+.empty .ring
+{
+	width: 64px;
+	height: 64px;
+	border-radius: var(--r-pill);
+	background: var(--surface);
+	border: 1px solid var(--raised);
+	color: var(--accent);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.empty h3
+{
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-size: 22px;
+	margin: 0;
+}
+
+.empty p
+{
+	margin: 0;
+	color: var(--text-muted);
+	max-width: 280px;
+}
+
+/* ==========================================================================
+   Side panel (Add / Edit) + scrim
+   ========================================================================== */
+
+.modal-overlay
+{
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	background: var(--scrim);
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity .25s ease, visibility .25s ease;
+}
+
+.modal-overlay.open { opacity: 1; visibility: visible; }
+
+.panel
+{
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 400px;
+	max-width: 100%;
+	background: var(--surface);
+	border-left: 1px solid var(--raised);
+	box-shadow: var(--shadow-panel);
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	overflow-y: auto;
+	transform: translateX(24px);
+	transition: transform .25s ease;
+}
+
+.modal-overlay.open .panel { transform: none; }
+
+.panel-head
+{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.inner-title
+{
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-size: 22px;
+	margin: 0;
+}
+
+.panel-id
+{
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+.panel-actions
+{
+	margin-top: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.panel-actions .row { display: flex; gap: 10px; }
+.panel-actions .row .btn-primary { flex: 1; padding: 12px 22px; }
+.panel-actions .row .btn-outline { padding: 12px 22px; }
+
+#addContactResult,
+#editContactResult
+{
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--danger);
+}
+
+/* ==========================================================================
+   Inputs
+   ========================================================================== */
+
+.field
+{
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.field label
+{
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+.field-row
+{
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.input
+{
+	width: 100%;
+	min-width: 0;
+	padding: 10px 14px;
+	border-radius: var(--r-pill);
+	border: 1px solid var(--raised);
+	background: var(--bg);
+	color: var(--text);
+	caret-color: var(--accent);
+	transition: border-color .15s ease;
+}
+
+.input::placeholder { color: var(--text-muted); }
+.input:hover { border-color: var(--border-hover); }
+.input:focus-visible { border-color: var(--accent); outline-offset: 0; }
+
+.with-copy { display: flex; gap: 6px; }
+.with-copy .input { flex: 1; }
+
+/* ==========================================================================
+   Delete dialog
+   ========================================================================== */
+
+.dialog-overlay
+{
+	position: fixed;
+	inset: 0;
+	z-index: 1100;
+	display: grid;
+	place-items: center;
+	padding: 24px;
+	background: var(--scrim);
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity .2s ease, visibility .2s ease;
+}
+
+.dialog-overlay.open { opacity: 1; visibility: visible; }
+
+.dialog
+{
+	width: 100%;
+	max-width: 380px;
+	background: var(--surface);
+	border: 1px solid var(--raised);
+	border-radius: var(--r-dialog);
+	padding: 26px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-shadow: var(--shadow-float);
+}
+
+.dialog h2
+{
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-size: 20px;
+	margin: 0;
+}
+
+.dialog p { margin: 0; color: var(--text-muted); }
+
+.dialog-actions
+{
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-top: 8px;
+}
+
+/* ==========================================================================
+   Toast
+   ========================================================================== */
+
+.toast
+{
+	position: fixed;
+	white-space: nowrap;
+	left: 50%;
+	bottom: 24px;
+	transform: translateX(-50%);
+	z-index: 1200;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: var(--text);
+	color: var(--on-accent);
+	border-radius: var(--r-pill);
+	padding: 10px 18px 10px 14px;
+	font-size: 13px;
+	font-weight: 600;
+	box-shadow: var(--shadow-float);
+}
+
+.toast .check
+{
+	width: 20px;
+	height: 20px;
+	flex: none;
+	border-radius: var(--r-pill);
+	background: var(--accent);
+	color: var(--on-accent);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.toast[hidden] { display: none; }
+
+/* ==========================================================================
+   Login / register page (DESIGN_GUIDE section 5)
+   ========================================================================== */
+
+.auth-page
+{
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 20px;
+}
+
+.auth-card
+{
+	width: 100%;
+	max-width: 420px;
+	background: var(--surface);
+	border: 1px solid var(--raised);
+	border-radius: var(--r-card);
+	padding: 40px;
+	display: flex;
+	flex-direction: column;
+}
+
+/* js/auth.js toggles these cards with style.display = "block" / "none", which
+   overrides the flex above -- so space the children with margins, which hold
+   up under either display mode, instead of a flex `gap`. */
+.auth-card > * + * { margin-top: 18px; }
+
+.auth-mark
+{
+	width: 48px;
+	height: 48px;
+	flex: none;
+	border-radius: var(--r-pill);
+	background: var(--accent);
+	color: var(--on-accent);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.auth-card #title,
+.auth-card .auth-title
+{
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-size: 34px;
+	line-height: 1.15;
+	margin: 0;
+}
+
+.auth-lede
+{
+	margin: 0;
+	color: var(--text-muted);
+}
+
+.auth-head
+{
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.auth-form
+{
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* login page inputs sit on --surface, so they take the --surface fill */
+.auth-card .input { background: var(--surface); }
 
 .switchText
 {
-	font-size: 0.6em;
-	margin-top: 14px;
-	color: var(--color-light);
+	margin: 0;
+	font-size: 13px;
+	color: var(--text-muted);
 }
 
 .switchText a
 {
-	color: var(--color-light);
-	text-decoration: underline;
-	text-underline-offset: 3px;
+	color: var(--accent-soft);
+	text-decoration: none;
 }
 
-.switchText a:hover
-{
-	opacity: 0.75;
-}
+.switchText a:hover { text-decoration: underline; }
 
 #loginResult,
-#registerResult,
-#addContactResult,
-#editContactResult,
-#searchResult
+#registerResult
 {
-	display: inline-block;
-	font-size: 0.7em;
-	font-weight: bold; /* not color alone -- WCAG 1.4.1 */
-	/* lightened from #e08a8a so text on the dark panel clears WCAG AA 4.5:1 */
-	/* (was 3.74:1, now 4.80:1) */
-	color: #f0a3a3;
-	margin-top: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--danger);
 }
 
-/* ---- contacts table ---- */
-/* #contactsListDiv scrolls horizontally rather than the whole page, so a
-   5-column table stays usable at narrow widths (e.g. 375px) without
-   forcing horizontal scroll on the page itself */
-#contactsListDiv
-{
-	overflow-x: auto;
-}
+/* ==========================================================================
+   Phone FAB (hidden on desktop)
+   ========================================================================== */
 
-/* Toggled by updateTableScrollHint() in js/contacts.js -- only shown when */
-/* the table is actually wider than #contactsListDiv's visible width */
-#tableScrollHint
-{
-	width: 70%;
-	max-width: 800px;
-	margin: -10px auto 15px auto;
-	font-size: 0.6em;
-	color: var(--color-light);
-	opacity: 0.7;
-	text-align: right;
-	box-sizing: border-box;
-}
+.fab { display: none; }
 
-#contactsTable
-{
-	width: 100%;
-	border-collapse: separate;
-	border-spacing: 0;
-	border-radius: 8px;
-	overflow: hidden;
-	background-color: var(--color-light);
-}
+/* ==========================================================================
+   Scroll reveal (progressive enhancement -- js/scroll-reveal.js)
+   Default state is fully visible; the hidden state only applies once the
+   script confirms JS is on and the user hasn't asked for reduced motion.
+   ========================================================================== */
 
-#contactsTable th,
-#contactsTable td
-{
-	border-bottom: 1px solid var(--color-dark);
-	padding: 10px 8px;
-	font-size: 0.7em;
-	text-align: left;
-	color: var(--color-darkest);
-}
-
-#contactsTable tbody tr:last-child td
-{
-	border-bottom: none;
-}
-
-#contactsTable th
-{
-	background-color: var(--color-accent);
-	color: var(--color-light);
-	font-weight: 700;
-	letter-spacing: 0.3px;
-}
-
-#contactsTable tbody tr:nth-child(even)
-{
-	background-color: rgba(55, 53, 62, 0.06);
-}
-
-#contactsTable tbody tr:hover
-{
-	background-color: rgba(106, 84, 84, 0.15);
-}
-
-/* ---- scroll reveal ---- */
-/* Default: fully visible. Only when js/scroll-reveal.js actually runs (and
-   the user hasn't asked for reduced motion) does it add js-reveal-enabled to
-   <html>, which is what switches these panels into the pre-animation hidden
-   state below -- so no-JS visitors and reduced-motion visitors never have
-   content that depends on a script to become visible. */
-.reveal
-{
-	opacity: 1;
-	transform: none;
-}
+.reveal { opacity: 1; }
 
 html.js-reveal-enabled .reveal
 {
 	opacity: 0;
-	transform: translateY(18px);
-	transition: opacity 0.6s ease, transform 0.6s ease;
+	transform: translateY(12px);
+	transition: opacity .45s ease, transform .45s ease;
 }
 
 html.js-reveal-enabled .reveal.is-visible
@@ -475,151 +821,117 @@ html.js-reveal-enabled .reveal.is-visible
 	transform: none;
 }
 
-/* Staggered on contacts.html so the panels cascade in rather than popping
-   together -- purely cosmetic, harmless if a panel isn't present on a page. */
-html.js-reveal-enabled #searchDiv { transition-delay: 0.08s; }
-html.js-reveal-enabled #contactsListDiv { transition-delay: 0.16s; }
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
 
 @media (prefers-reduced-motion: reduce)
 {
+	*
+	{
+		transition: none !important;
+		animation: none !important;
+	}
+
 	html.js-reveal-enabled .reveal
 	{
 		opacity: 1;
 		transform: none;
-		transition: none;
 	}
 }
 
-/* ---- Add/Edit contact modal ---- */
-/* Always present in the DOM (not display:none) so opacity/transform can
-   transition; visibility:hidden keeps it non-interactive and out of the tab
-   order while closed. js/contacts.js toggles the "open" class. */
-.modal-overlay
+@media (max-width: 959px)
 {
-	position: fixed;
-	inset: 0;
-	z-index: 1000;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 16px;
-	box-sizing: border-box;
-	background-color: rgba(0, 0, 0, 0.55);
-	opacity: 0;
-	visibility: hidden;
-	transition: opacity 0.25s ease, visibility 0.25s ease;
+	.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-.modal-overlay.open
+@media (max-width: 599px)
 {
-	opacity: 1;
-	visibility: visible;
-}
-
-.modal-panel
-{
-	position: relative;
-	font-size: 20px;
-	width: 100%;
-	max-width: 440px;
-	max-height: calc(100vh - 32px);
-	overflow-y: auto;
-	padding: 32px 28px 28px 28px;
-	background-color: var(--color-dark);
-	border: 1px solid rgba(255, 255, 255, 0.06);
-	border-radius: 12px;
-	box-shadow: var(--shadow-panel);
-	box-sizing: border-box;
-	text-align: center;
-	color: var(--color-light);
-	transform: translateY(-16px) scale(0.98);
-	transition: transform 0.25s ease;
-}
-
-.modal-overlay.open .modal-panel
-{
-	transform: translateY(0) scale(1);
-}
-
-.modal-close
-{
-	position: absolute;
-	top: 10px;
-	right: 10px;
-	width: 32px;
-	height: 32px;
-	border-radius: 50%;
-	border: none;
-	background: none;
-	color: var(--color-light);
-	font-size: 20px;
-	line-height: 1;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.modal-close:hover
-{
-	background-color: rgba(211, 218, 217, 0.12);
-}
-
-@media (prefers-reduced-motion: reduce)
-{
-	.modal-overlay,
-	.modal-panel
+	.topbar
 	{
-		transition: none;
-	}
-}
-
-/* ---- narrow screens (phones) ---- */
-@media (max-width: 480px)
-{
-	#loginDiv,
-	#registerDiv,
-	#searchDiv,
-	#contactsListDiv,
-	#tableScrollHint
-	{
-		width: 92%;
+		flex-wrap: wrap;
+		padding: 20px 16px 12px;
 	}
 
-	#title
+	#title { font-size: 26px; }
+
+	#accountControls { margin-left: auto; }
+
+	.search
 	{
-		font-size: 28px;
+		order: 3;
+		flex-basis: 100%;
+		max-width: none;
+		margin-left: 0;
 	}
 
-	#loginDiv,
-	#registerDiv,
-	#searchDiv,
-	#contactsListDiv
+	#openAddContactBtn { display: none; }
+
+	.fab
 	{
-		padding: 20px;
+		display: flex;
+		position: fixed;
+		right: 20px;
+		bottom: 24px;
+		width: 56px;
+		height: 56px;
+		border: 0;
+		border-radius: var(--r-pill);
+		background: var(--accent);
+		color: var(--on-accent);
+		font-size: 26px;
+		font-weight: 700;
+		align-items: center;
+		justify-content: center;
+		box-shadow: var(--shadow-float);
+		z-index: 900;
 	}
 
-	#accountControls
+	.fab:hover { background: var(--accent-hover); }
+
+	main { padding: 14px 16px; }
+
+	.results-head { align-items: center; }
+
+	.grid { grid-template-columns: 1fr; }
+
+	.card
 	{
-		top: 12px;
-		right: 12px;
-		gap: 8px;
+		padding: 14px 16px;
+		border-radius: 20px;
 	}
 
-	.fab,
-	.profile-bubble
+	/* phone cards: one chevron instead of the two icon buttons */
+	.card .icon-btn { display: none; }
+	.card-chevron { display: block; }
+
+	/* bottom sheet with drag handle */
+	.panel
 	{
+		top: auto;
+		width: 100%;
+		max-height: 92vh;
+		border-left: 0;
+		border-top: 1px solid var(--raised);
+		border-radius: 32px 32px 0 0;
+		padding: 12px 24px 28px;
+		transform: translateY(24px);
+	}
+
+	.panel::before
+	{
+		content: "";
+		flex: none;
 		width: 40px;
-		height: 40px;
+		height: 4px;
+		border-radius: var(--r-pill);
+		background: var(--border-hover);
+		align-self: center;
 	}
 
-	#profileMenu
-	{
-		min-width: 180px;
-	}
+	.btn { min-height: 44px; }
+	.icon-btn { width: 44px; height: 44px; }
 
-	.modal-panel
-	{
-		padding: 28px 18px 20px 18px;
-	}
+	.auth-card { padding: 28px 22px; }
+	.auth-card #title { font-size: 28px; }
 }

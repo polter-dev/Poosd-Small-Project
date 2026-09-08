@@ -6,103 +6,231 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link href="css/styles.css" rel="stylesheet">
 	<link href="css/accessibility.css" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body onload="onContactsLoad();">
 
-<h1 id="title">My Contacts</h1>
+<!-- Top bar: title | search pill | + Add Contact | account bubble.        -->
+<!-- The bubble's dropdown holds what #loggedInDiv used to show inline      -->
+<!-- (name + logout); open/close/outside-click/escape logic is in js/auth.js -->
+<header class="topbar">
+	<h1 id="title">Contacts</h1>
 
-<!-- Account bubble + Add Contact trigger, fixed top-right. The bubble's -->
-<!-- dropdown holds what #loggedInDiv used to show inline (name + logout); -->
-<!-- open/close/outside-click/escape logic lives in js/auth.js. -->
-<div id="accountControls" class="reveal">
-	<button type="button" id="openAddContactBtn" class="fab" aria-haspopup="dialog" aria-expanded="false" aria-controls="addContactDiv" aria-label="Add contact" onclick="openAddContact(this);">
-		<span aria-hidden="true">+</span>
-	</button>
+	<!-- Server-side search: the query is sent to the API on every keystroke, -->
+	<!-- results are never filtered from a locally cached contact list.       -->
+	<div id="searchDiv" class="search">
+		<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+		<label for="searchText" class="visually-hidden">Search Contacts</label>
+		<input type="text" id="searchText" placeholder="Search contacts&hellip;" autocomplete="off" oninput="searchContacts();" />
+	</div>
 
-	<div id="profileBubbleWrap">
-		<button type="button" id="profileToggleBtn" class="profile-bubble" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" aria-label="Account menu" onclick="toggleProfileMenu();">
-			<span id="profileInitials" aria-hidden="true"></span>
-		</button>
-		<div id="profileMenu" role="menu" aria-label="Account" hidden>
-			<span id="userName"></span>
-			<button type="button" id="logoutButton" class="buttons" onclick="doLogout();">Log Out</button>
+	<div id="accountControls">
+		<button type="button" id="openAddContactBtn" class="btn btn-primary" aria-haspopup="dialog" aria-expanded="false" aria-controls="addContactDiv" onclick="openAddContact(this);">+ Add Contact</button>
+
+		<div id="profileBubbleWrap">
+			<button type="button" id="profileToggleBtn" class="profile-bubble" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" aria-label="Account menu" onclick="toggleProfileMenu();">
+				<span id="profileInitials" aria-hidden="true"></span>
+			</button>
+			<div id="profileMenu" role="menu" aria-label="Account" hidden>
+				<span id="userName"></span>
+				<button type="button" id="logoutButton" class="menu-item" role="menuitem" onclick="doLogout();">Log Out</button>
+			</div>
 		</div>
 	</div>
-</div>
+</header>
 
-<!-- Server-side search: query is sent to the API on every keystroke/submit, -->
-<!-- results are never filtered from a locally cached contact list -->
-<div id="searchDiv" class="reveal">
-	<label for="searchText">Search Contacts</label><br />
-	<input type="text" id="searchText" placeholder="Search contacts..." oninput="searchContacts();" />
-	<span id="searchResult" aria-live="polite"></span>
-</div>
+<main>
+	<!-- Heading copy is set by js/contacts.js:                                -->
+	<!--   empty search  -> "All contacts"  + #resultCount "24 contacts"       -->
+	<!--   active search -> "Results"       + #resultCount "2 of 24 contacts   -->
+	<!--                                       match &ldquo;oka&rdquo;"         -->
+	<!-- #searchResult carries "Searching&hellip;" / "No contacts found".      -->
+	<div class="results-head">
+		<div class="results-title">
+			<h2 id="resultsHeading">All contacts</h2>
+			<span id="resultCount"></span>
+			<span id="searchResult" aria-live="polite"></span>
+		</div>
+		<!-- Client-side sort of the returned results only (never the full list) -->
+		<div class="seg" role="group" aria-label="Sort">
+			<button type="button" id="sortFirstButton" aria-pressed="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4M17 20V4M3 8l4-4 4 4M7 4v16"/></svg>First A&rarr;Z</button>
+			<button type="button" id="sortLastButton" aria-pressed="false">Last A&rarr;Z</button>
+		</div>
+	</div>
 
-<!-- Add Contact panel: hidden until openAddContact() (js/contacts.js) adds -->
-<!-- "open" to the overlay -- triggered by the + button above. -->
+	<!-- Card grid. #contactsTable is the wrapper, #contactsTableBody is the  -->
+	<!-- grid itself (ids kept so js/contacts.js still finds them). Cards are -->
+	<!-- injected by renderContacts(); see #cardTemplate / #skeletonTemplate  -->
+	<!-- below for the exact structure to emit.                               -->
+	<div id="contactsListDiv" class="reveal">
+		<div id="contactsTable">
+			<div id="contactsTableBody" class="grid">
+				<!-- cards injected by js/contacts.js -> renderContacts() -->
+			</div>
+		</div>
+	</div>
+
+	<!-- Legacy horizontal-scroll hint; the card grid never scrolls sideways, -->
+	<!-- so this stays hidden unless js/contacts.js decides otherwise.        -->
+	<p id="tableScrollHint" class="hidden">Scroll to see more &rarr;</p>
+
+	<!-- Shown instead of the grid when there are no contacts and no search. -->
+	<div id="emptyState" class="empty hidden">
+		<span class="ring"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+		<h3>No contacts yet</h3>
+		<p>Add your first person and they&rsquo;ll show up here.</p>
+		<button type="button" id="emptyAddContactBtn" class="btn btn-primary" onclick="openAddContact(this);">+ Add Contact</button>
+	</div>
+</main>
+
+<!-- Phone-only floating add button (the top-bar button is hidden < 600px). -->
+<button type="button" id="addContactFab" class="fab" aria-label="Add contact" onclick="openAddContact(this);">+</button>
+
+<!-- ===================================================================== -->
+<!-- Markup contracts for js/contacts.js. Templates are inert; clone them   -->
+<!-- and fill every contact field with textContent (issue #82).            -->
+<!-- ===================================================================== -->
+<template id="cardTemplate">
+	<article class="card">
+		<div class="card-head">
+			<span class="avatar" aria-hidden="true"></span>
+			<span class="card-name"></span>
+			<button type="button" class="icon-btn edit-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+			<button type="button" class="icon-btn delete-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+			<svg class="card-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+		</div>
+		<div class="card-body"><span class="card-phone"></span><span class="card-email"></span></div>
+	</article>
+</template>
+
+<!-- Loading state: clone 2-6 of these into #contactsTableBody while the -->
+<!-- request is in flight and set #searchResult to "Searching&hellip;".  -->
+<template id="skeletonTemplate">
+	<article class="card skeleton" aria-hidden="true">
+		<div class="card-head"><span class="avatar"></span><span class="bar name"></span></div>
+		<div class="card-body"><span class="bar" style="width:90px"></span><span class="bar" style="width:150px"></span></div>
+	</article>
+</template>
+
+<!-- Add Contact side panel: hidden until openAddContact() (js/contacts.js) -->
+<!-- adds "open" to the overlay -- triggered by the + buttons above.        -->
 <div id="addContactOverlay" class="modal-overlay">
-	<div id="addContactDiv" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="addContactTitle">
-		<button type="button" class="modal-close" aria-label="Close add contact form" onclick="closeAddContact();">&times;</button>
-		<span id="addContactTitle" class="inner-title">ADD A CONTACT</span>
-		<label for="addFirstName" class="visually-hidden">First Name</label>
-		<input type="text" id="addFirstName" placeholder="First Name" />
-		<label for="addLastName" class="visually-hidden">Last Name</label>
-		<input type="text" id="addLastName" placeholder="Last Name" />
-		<label for="addPhone" class="visually-hidden">Phone</label>
-		<input type="tel" id="addPhone" placeholder="Phone" />
-		<label for="addEmail" class="visually-hidden">Email</label>
-		<input type="email" id="addEmail" placeholder="Email" />
-		<div class="modal-actions">
-			<button type="button" id="addContactButton" class="buttons" onclick="addContact();">Add Contact</button>
-			<button type="button" id="cancelAddButton" class="buttons" onclick="closeAddContact();">Cancel</button>
+	<aside id="addContactDiv" class="panel modal-panel" role="dialog" aria-modal="true" aria-labelledby="addContactTitle">
+		<div class="panel-head">
+			<h2 id="addContactTitle" class="inner-title">Add contact</h2>
+			<button type="button" class="icon-btn" aria-label="Close add contact form" onclick="closeAddContact();"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
 		</div>
+
+		<div class="field-row">
+			<div class="field">
+				<label for="addFirstName">First name</label>
+				<input type="text" id="addFirstName" class="input" autocomplete="off" />
+			</div>
+			<div class="field">
+				<label for="addLastName">Last name</label>
+				<input type="text" id="addLastName" class="input" autocomplete="off" />
+			</div>
+		</div>
+
+		<div class="field">
+			<label for="addPhone">Phone</label>
+			<div class="with-copy">
+				<input type="tel" id="addPhone" class="input" autocomplete="off" />
+				<button type="button" class="icon-btn lg" aria-label="Copy phone" data-copy="addPhone"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="3"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+			</div>
+		</div>
+
+		<div class="field">
+			<label for="addEmail">Email</label>
+			<div class="with-copy">
+				<input type="email" id="addEmail" class="input" autocomplete="off" />
+				<button type="button" class="icon-btn lg" aria-label="Copy email" data-copy="addEmail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="3"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+			</div>
+		</div>
+
 		<span id="addContactResult" aria-live="polite"></span>
-	</div>
-</div>
 
-<div id="contactsListDiv" class="reveal">
-	<table id="contactsTable">
-		<caption class="visually-hidden">Your contacts</caption>
-		<thead>
-			<tr>
-				<th scope="col">First Name</th>
-				<th scope="col">Last Name</th>
-				<th scope="col">Phone</th>
-				<th scope="col">Email</th>
-				<th scope="col">Actions</th>
-			</tr>
-		</thead>
-		<tbody id="contactsTableBody">
-			<!-- rows injected by js/contacts.js -> renderContacts() -->
-		</tbody>
-	</table>
-</div>
-<!-- Shown only when the table above is actually wider than its scrollable -->
-<!-- container -- toggled by updateTableScrollHint() in js/contacts.js -->
-<p id="tableScrollHint" class="hidden">Scroll to see more &rarr;</p>
-
-<!-- Edit panel: hidden until editContact() (js/contacts.js) adds "open" to -->
-<!-- the overlay -- triggered by a row's Edit button, populated from that row's data. -->
-<div id="editContactOverlay" class="modal-overlay">
-	<div id="editContactDiv" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="editContactTitle">
-		<button type="button" class="modal-close" aria-label="Close edit contact form" onclick="cancelEditContact();">&times;</button>
-		<span id="editContactTitle" class="inner-title">EDIT CONTACT</span>
-		<input type="hidden" id="editContactId" />
-		<label for="editFirstName" class="visually-hidden">First Name</label>
-		<input type="text" id="editFirstName" placeholder="First Name" />
-		<label for="editLastName" class="visually-hidden">Last Name</label>
-		<input type="text" id="editLastName" placeholder="Last Name" />
-		<label for="editPhone" class="visually-hidden">Phone</label>
-		<input type="tel" id="editPhone" placeholder="Phone" />
-		<label for="editEmail" class="visually-hidden">Email</label>
-		<input type="email" id="editEmail" placeholder="Email" />
-		<div class="modal-actions">
-			<button type="button" id="saveEditButton" class="buttons" onclick="saveEditContact();">Save Changes</button>
-			<button type="button" id="cancelEditButton" class="buttons" onclick="cancelEditContact();">Cancel</button>
+		<div class="panel-actions">
+			<div class="row">
+				<button type="button" id="addContactButton" class="btn btn-primary" onclick="addContact();">Add Contact</button>
+				<button type="button" id="cancelAddButton" class="btn btn-outline" onclick="closeAddContact();">Cancel</button>
+			</div>
 		</div>
+	</aside>
+</div>
+
+<!-- Edit side panel: hidden until editContact() (js/contacts.js) adds "open" -->
+<!-- to the overlay -- triggered by a card's Edit button and populated from   -->
+<!-- that card's data.                                                        -->
+<div id="editContactOverlay" class="modal-overlay">
+	<aside id="editContactDiv" class="panel modal-panel" role="dialog" aria-modal="true" aria-labelledby="editContactTitle">
+		<div class="panel-head">
+			<h2 id="editContactTitle" class="inner-title">Edit contact</h2>
+			<button type="button" class="icon-btn" aria-label="Close edit contact form" onclick="cancelEditContact();"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+		</div>
+
+		<div class="panel-id">
+			<span id="editContactAvatar" class="avatar lg" aria-hidden="true"></span>
+			<span id="editContactIdLabel"></span>
+		</div>
+		<input type="hidden" id="editContactId" />
+
+		<div class="field-row">
+			<div class="field">
+				<label for="editFirstName">First name</label>
+				<input type="text" id="editFirstName" class="input" autocomplete="off" />
+			</div>
+			<div class="field">
+				<label for="editLastName">Last name</label>
+				<input type="text" id="editLastName" class="input" autocomplete="off" />
+			</div>
+		</div>
+
+		<div class="field">
+			<label for="editPhone">Phone</label>
+			<div class="with-copy">
+				<input type="tel" id="editPhone" class="input" autocomplete="off" />
+				<button type="button" class="icon-btn lg" aria-label="Copy phone" data-copy="editPhone"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="3"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+			</div>
+		</div>
+
+		<div class="field">
+			<label for="editEmail">Email</label>
+			<div class="with-copy">
+				<input type="email" id="editEmail" class="input" autocomplete="off" />
+				<button type="button" class="icon-btn lg" aria-label="Copy email" data-copy="editEmail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="3"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+			</div>
+		</div>
+
 		<span id="editContactResult" aria-live="polite"></span>
+
+		<div class="panel-actions">
+			<div class="row">
+				<button type="button" id="saveEditButton" class="btn btn-primary" onclick="saveEditContact();">Save Changes</button>
+				<button type="button" id="cancelEditButton" class="btn btn-outline" onclick="cancelEditContact();">Cancel</button>
+			</div>
+			<button type="button" id="deleteFromEditButton" class="btn btn-text danger">Delete this contact</button>
+		</div>
+	</aside>
+</div>
+
+<!-- Delete confirmation, replaces confirm(). js/contacts.js toggles "open", -->
+<!-- fills #deleteTitle with "Delete {First Last}?" and focuses Keep.        -->
+<div id="deleteOverlay" class="dialog-overlay">
+	<div id="deleteDialog" class="dialog modal-panel" role="dialog" aria-modal="true" aria-labelledby="deleteTitle" aria-describedby="deleteBody">
+		<h2 id="deleteTitle">Delete this contact?</h2>
+		<p id="deleteBody">This removes the contact from your list. There is no undo.</p>
+		<div class="dialog-actions">
+			<button type="button" id="deleteKeepButton" class="btn btn-outline">Keep</button>
+			<button type="button" id="deleteConfirmButton" class="btn btn-danger">Delete</button>
+		</div>
 	</div>
+</div>
+
+<!-- Success toast: set #toastText, unhide, hide again after 2500ms. -->
+<div id="toast" class="toast" role="status" aria-live="polite" hidden>
+	<span class="check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+	<span id="toastText"></span>
 </div>
 
 <script type="text/javascript" src="js/config.js"></script>
