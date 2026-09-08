@@ -503,6 +503,25 @@ function copyFieldValue(inputId, label)
 
 // ---- Focus plumbing shared by the panels and the dialog -----------------
 
+function focusableWithinPanel(panelEl)
+{
+	let candidates = panelEl.querySelectorAll(
+		'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+	);
+	let out = [];
+	for (let i = 0; i < candidates.length; i++)
+	{
+		// Drops <input type="hidden"> (display:none in the UA sheet) and any
+		// control the panel is currently hiding, so the cycle below matches
+		// what the browser would actually tab through.
+		if (isElementFocusable(candidates[i]))
+		{
+			out.push(candidates[i]);
+		}
+	}
+	return out;
+}
+
 // Keeps Tab/Shift+Tab from leaving `panelEl` while it's open. Both panels and
 // the delete dialog declare role="dialog" aria-modal="true", which asserts
 // that background content is unreachable -- without this, Tab from the last
@@ -511,32 +530,52 @@ function copyFieldValue(inputId, label)
 // enforces it unless this does.
 function trapFocusWithinPanel(event, panelEl)
 {
-	if (event.key !== "Tab")
+	if (event.key !== "Tab" || !panelEl)
 	{
 		return;
 	}
 
-	let focusable = panelEl.querySelectorAll(
-		'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-	);
+	let focusable = focusableWithinPanel(panelEl);
+
+	// Every control inside is disabled -- this is the delete dialog while the
+	// delete is in flight. Returning here (as this used to) hands the keypress
+	// to the browser, whose native walk starts from the container and lands in
+	// the page behind the scrim. Confine focus to the container instead.
 	if (focusable.length === 0)
 	{
+		event.preventDefault();
+		panelEl.focus();
 		return;
 	}
 
-	let first = focusable[0];
-	let last = focusable[focusable.length - 1];
+	// Drive every Tab explicitly rather than only correcting the two edges.
+	// The old first/last-only check silently no-opped whenever activeElement
+	// was not one of those two nodes -- in particular when setButtonBusy had
+	// parked focus on the container itself, which carries tabindex="-1" and is
+	// therefore never in `focusable`. Computing the next index ourselves makes
+	// the trap independent of which elements happen to be enabled.
+	let index = focusable.indexOf(document.activeElement);
+	event.preventDefault();
 
-	if (event.shiftKey && document.activeElement === first)
+	if (index === -1)
 	{
-		event.preventDefault();
-		last.focus();
+		// Focus is on the container (or otherwise outside the cycle): enter it
+		// from whichever end the user is tabbing towards.
+		focusable[event.shiftKey ? focusable.length - 1 : 0].focus();
+		return;
 	}
-	else if (!event.shiftKey && document.activeElement === last)
+
+	let next = event.shiftKey ? index - 1 : index + 1;
+	if (next < 0)
 	{
-		event.preventDefault();
-		first.focus();
+		next = focusable.length - 1;
 	}
+	else if (next >= focusable.length)
+	{
+		next = 0;
+	}
+
+	focusable[next].focus();
 }
 
 // The modal overlay shows/hides via a CSS class that transitions
@@ -619,6 +658,73 @@ function focusOnceVisible(el, containerEl)
 	requestAnimationFrame(attempt);
 }
 
+// An overlay that has just lost its "open" class still computes
+// visibility:visible for the length of the CSS transition
+// (styles.css: `transition: opacity .25s ease, visibility .25s ease`), so
+// isElementFocusable() alone cannot tell that a button inside a closing
+// overlay is on its way out. Ask the overlay instead.
+function isInsideClosedOverlay(el)
+{
+	if (!el || !el.closest)
+	{
+		return false;
+	}
+
+	let overlay = el.closest(".modal-overlay, .dialog-overlay");
+	return !!overlay && !overlay.classList.contains("open");
+}
+
+// The element focus should return to when a panel/dialog closes. A remembered
+// trigger that has since been removed, disabled, hidden, or left behind inside
+// an overlay that is itself closing cannot take focus -- .focus() on it is a
+// silent no-op and focus stays wherever it was (usually <body>, which restarts
+// the user's next Tab at the top of the page). Fall back to the search box,
+// which is always present and focusable.
+function resolveReturnFocusEl(preferredEl)
+{
+	if (preferredEl && !isInsideClosedOverlay(preferredEl) && isElementFocusable(preferredEl))
+	{
+		return preferredEl;
+	}
+
+	let active = document.activeElement;
+	if (active && active !== document.body && !isInsideClosedOverlay(active) && isElementFocusable(active))
+	{
+		return active;
+	}
+
+	return document.getElementById("searchText");
+}
+
+// Second half of the same guarantee: the target resolved at open time may have
+// gone stale by the time the panel closes (its card was re-rendered by a
+// refresh, say), so re-check right before handing focus over, and verify focus
+// actually landed rather than trusting .focus() to have worked.
+function restoreFocusTo(el)
+{
+	let target = el;
+	if (!target || isInsideClosedOverlay(target) || !isElementFocusable(target))
+	{
+		target = document.getElementById("searchText");
+	}
+
+	if (!target)
+	{
+		return;
+	}
+
+	target.focus();
+
+	if (document.activeElement !== target)
+	{
+		let fallback = document.getElementById("searchText");
+		if (fallback && fallback !== target)
+		{
+			fallback.focus();
+		}
+	}
+}
+
 // Disabling the in-flight button would drop focus to <body> if it is the
 // focused element, which silently defeats the panel's focus trap. Park focus
 // on the panel itself (tabindex="-1") for the duration instead.
@@ -663,7 +769,7 @@ function openAddContact(triggerEl)
 	document.addEventListener("keydown", onAddContactKeydown);
 	document.addEventListener("click", onAddContactOutsideClick, true);
 
-	addReturnFocusEl = triggerEl || document.activeElement;
+	addReturnFocusEl = resolveReturnFocusEl(triggerEl);
 	focusOnceVisible(document.getElementById("addFirstName"), document.getElementById("addContactDiv"));
 }
 
@@ -680,9 +786,9 @@ function closeAddContact(returnFocus)
 	document.removeEventListener("keydown", onAddContactKeydown);
 	document.removeEventListener("click", onAddContactOutsideClick, true);
 
-	if (returnFocus !== false && addReturnFocusEl)
+	if (returnFocus !== false)
 	{
-		addReturnFocusEl.focus();
+		restoreFocusTo(addReturnFocusEl);
 	}
 	addReturnFocusEl = null;
 }
@@ -707,6 +813,55 @@ function onAddContactOutsideClick(event)
 		// <body>, or a keyboard user's next Tab restarts at the top of the page.
 		closeAddContact(true);
 	}
+}
+
+// js/api.js is the shared request helper for every page and deliberately has
+// no timeout, so a request that never resolves (mobile dead zone, hung proxy,
+// a stalled route) leaves the in-flight latch set forever: the button stays
+// disabled, the delete dialog refuses to close, and the only way out is a page
+// reload. Rather than change the shared helper, every mutating call on this
+// page goes through this wrapper, which owns a client-side deadline and a
+// one-shot settle flag. The flag matters as much as the timer: once the
+// deadline has fired and the user has been given the controls back, a late
+// response must NOT run the success path -- it would re-close a dialog the
+// user has already reopened, toast a delete that also errored, and re-render
+// the grid twice.
+const REQUEST_DEADLINE_MS = 15000;
+const REQUEST_TIMEOUT_MESSAGE = "The server did not respond. Please try again.";
+
+function callApiWithDeadline(endpointName, payload, onSuccess, onError)
+{
+	let settled = false;
+
+	let timer = window.setTimeout(function()
+	{
+		if (settled)
+		{
+			return;
+		}
+		settled = true;
+		onError(REQUEST_TIMEOUT_MESSAGE);
+	}, REQUEST_DEADLINE_MS);
+
+	function settle(run, arg)
+	{
+		if (settled)
+		{
+			return; // deadline already released the UI; this answer is stale
+		}
+		settled = true;
+		window.clearTimeout(timer);
+		run(arg);
+	}
+
+	callApi(endpointName, payload, function(response)
+	{
+		settle(onSuccess, response);
+	},
+	function(message)
+	{
+		settle(onError, message);
+	});
 }
 
 // A double-click (or double-tap on a slow connection) used to fire two
@@ -743,7 +898,7 @@ function addContact()
 		email: document.getElementById("addEmail").value
 	};
 
-	callApi("AddContact", payload, function(response)
+	callApiWithDeadline("AddContact", payload, function(response)
 	{
 		finish();
 
@@ -779,6 +934,14 @@ function addContact()
 
 let editReturnFocusEl = null;
 
+// Where focus has to go when the edit panel closes after a round trip through
+// the delete dialog. "Delete this contact" closes the edit panel (two stacked
+// focus traps cannot both own Escape), which used to throw the panel's return
+// target away; "Keep" then reopened the panel with no trigger and the fallback
+// picked up #deleteKeepButton -- a button inside an overlay that was closing.
+// Focus was restored onto an unfocusable node and ended up on <body>.
+let editReturnFocusBeforeDelete = null;
+
 // The contact currently loaded into the edit panel, so "Delete this contact"
 // knows whose name belongs in the dialog title.
 let editingContact = null;
@@ -812,7 +975,7 @@ function openEditContact(triggerEl)
 	// Without an explicit focus move a keyboard/screen-reader user has no
 	// indication the panel opened. Remember what had focus so Cancel/Save
 	// can put it back afterward.
-	editReturnFocusEl = triggerEl || document.activeElement;
+	editReturnFocusEl = resolveReturnFocusEl(triggerEl);
 	focusOnceVisible(document.getElementById("editFirstName"), document.getElementById("editContactDiv"));
 }
 
@@ -829,9 +992,9 @@ function closeEditContact(returnFocus)
 	document.removeEventListener("keydown", onEditContactKeydown);
 	document.removeEventListener("click", onEditContactOutsideClick, true);
 
-	if (returnFocus !== false && editReturnFocusEl)
+	if (returnFocus !== false)
 	{
-		editReturnFocusEl.focus();
+		restoreFocusTo(editReturnFocusEl);
 	}
 	editReturnFocusEl = null;
 }
@@ -896,7 +1059,7 @@ function saveEditContact()
 		email: document.getElementById("editEmail").value
 	};
 
-	callApi("EditContact", payload, function(response)
+	callApiWithDeadline("EditContact", payload, function(response)
 	{
 		finish();
 
@@ -958,6 +1121,7 @@ function wireDeleteDialog()
 		// Escape handlers on the same keypress is not something either can
 		// resolve sensibly. "Keep" reopens it.
 		let contact = editingContact;
+		editReturnFocusBeforeDelete = editReturnFocusEl;
 		editReturnFocusEl = null;
 		closeEditContact(false);
 		deleteCameFromEditPanel = true;
@@ -993,9 +1157,23 @@ function openDeleteDialog(contact, triggerEl)
 function closeDeleteDialog(returnFocus)
 {
 	let overlay = document.getElementById("deleteOverlay");
-	if (!overlay.classList.contains("open") || deleteInFlight)
+	if (!overlay.classList.contains("open"))
 	{
-		return; // the dialog stays up until the delete resolves
+		return;
+	}
+
+	if (deleteInFlight)
+	{
+		// The dialog stays up until the delete resolves -- but the swallowed
+		// dismissal must not leave focus wherever it ended up. A scrim click
+		// puts it on <body>, outside a dialog that is still modal; pull it
+		// back inside so the trap has something to cycle from.
+		let dialogEl = document.getElementById("deleteDialog");
+		if (dialogEl && !dialogEl.contains(document.activeElement))
+		{
+			dialogEl.focus();
+		}
+		return;
 	}
 
 	overlay.classList.remove("open");
@@ -1010,19 +1188,24 @@ function closeDeleteDialog(returnFocus)
 	if (returnFocus === false)
 	{
 		deleteReturnFocusEl = null;
+		editReturnFocusBeforeDelete = null;
 		return;
 	}
 
 	if (cameFromEdit && contact)
 	{
 		// Back to the edit panel the user was in, focus on the button that
-		// opened the dialog.
-		editContact(contact, null);
+		// opened the dialog -- and hand the panel the trigger it had BEFORE
+		// the dialog took over, so closing it later returns focus to the card
+		// the user actually came from instead of a hidden dialog button.
+		let editTrigger = editReturnFocusBeforeDelete;
+		editReturnFocusBeforeDelete = null;
+		editContact(contact, editTrigger);
 		focusOnceVisible(document.getElementById("deleteFromEditButton"), document.getElementById("editContactDiv"));
 	}
-	else if (deleteReturnFocusEl)
+	else
 	{
-		deleteReturnFocusEl.focus();
+		restoreFocusTo(deleteReturnFocusEl);
 	}
 
 	deleteReturnFocusEl = null;
@@ -1078,12 +1261,15 @@ function confirmDeleteContact()
 		deleteInFlight = false;
 		setButtonBusy(confirmButton, false);
 		setButtonBusy(keepButton, false);
-		resultSpan.textContent = message;
+		// #deleteResult is role="alert" (contacts.html): unhide it BEFORE
+		// writing the text, so the message lands in a live region that is
+		// already in the accessibility tree and actually gets announced.
 		resultSpan.hidden = false;
+		resultSpan.textContent = message;
 		focusOnceVisible(confirmButton, dialog);
 	}
 
-	callApi("DeleteContact", payload, function(response)
+	callApiWithDeadline("DeleteContact", payload, function(response)
 	{
 		deleteInFlight = false;
 		setButtonBusy(confirmButton, false);
