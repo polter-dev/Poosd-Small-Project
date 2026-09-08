@@ -423,6 +423,10 @@ main
 /* chevron affordance: desktop keeps the icon buttons, phone swaps them in */
 .card-chevron { display: none; color: var(--text-muted); }
 
+/* Below 600px js/contacts.js turns the whole card into the edit control
+   (role="button" + tabindex), so it needs to read as one. */
+.card.tappable { cursor: pointer; }
+
 /* ---- loading skeletons ---- */
 
 .card.skeleton .bar
