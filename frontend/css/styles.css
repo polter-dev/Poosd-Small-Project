@@ -343,7 +343,11 @@ main
 	white-space: nowrap;
 	align-items: center;
 	gap: 6px;
-	padding: 7px 14px;
+	/* DESIGN_GUIDE 4: "Min tap target 40px; 44px on phone." The pill keeps
+	   its 14px side padding; the height comes from min-height so the two
+	   segments stay flush inside the 1px .seg border. */
+	min-height: 40px;
+	padding: 0 14px;
 	border: 0;
 	background: transparent;
 	color: var(--text-muted);
@@ -432,6 +436,33 @@ main
 
 /* chevron affordance: desktop keeps the icon buttons, phone swaps them in */
 .card-chevron { display: none; color: var(--text-muted); }
+
+/* The avatar and the two icon buttons are fixed chrome that does not shrink
+   with the column, so in the narrow half of each column tier the name -- the
+   primary content -- was squeezed to as little as 83px and ordinary names
+   ("Ava Nguyen", "Anais Dupont") ellipsized. 280px of card content box is
+   what a single row needs to still give the name 140px
+   (40 avatar + 12 + 140 + 12 + 32 + 12 + 32); below that, drop the buttons
+   to a second row and hand the name the full width instead. Keyed to the
+   CARD, not the viewport, so it fires at the narrow end of the 2- and
+   3-column tiers alike and leaves the 960/600 breakpoints untouched. */
+.card { container-type: inline-size; }
+
+@container (max-width: 279.98px)
+{
+	.card-head
+	{
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto auto;
+		align-items: center;
+		gap: 8px 12px;
+	}
+
+	.card-head .avatar { grid-area: 1 / 1; }
+	.card-head .card-name { grid-area: 1 / 2 / 2 / -1; }
+	.card-head .edit-btn { grid-area: 2 / 3; }
+	.card-head .delete-btn { grid-area: 2 / 4; }
+}
 
 /* Below 600px js/contacts.js turns the whole card into the edit control
    (role="button" + tabindex), so it needs to read as one. */
@@ -957,9 +988,12 @@ html.js-reveal-enabled .reveal.is-visible
 		border-radius: 20px;
 	}
 
-	/* phone cards: one chevron instead of the two icon buttons */
+	/* phone cards: one chevron instead of the two icon buttons. With the
+	   buttons gone there is no second row to build, so undo the narrow-card
+	   grid above -- otherwise the chevron auto-places onto a stray row. */
 	.card .icon-btn { display: none; }
 	.card-chevron { display: block; }
+	.card-head { display: flex; }
 
 	/* bottom sheet with drag handle */
 	.panel
@@ -985,8 +1019,14 @@ html.js-reveal-enabled .reveal.is-visible
 		align-self: center;
 	}
 
+	/* DESIGN_GUIDE 4: 44px tap targets on phone. .icon-btn.lg needs its own
+	   rule to out-specify the 40px desktop size. #profileToggleBtn is
+	   .profile-bubble, not .icon-btn, so 4's "40px account bubble"
+	   still holds. */
 	.btn { min-height: 44px; }
 	.icon-btn { width: 44px; height: 44px; }
+	.icon-btn.lg { width: 44px; height: 44px; }
+	.seg button { min-height: 44px; }
 
 	.auth-card { padding: 28px 22px; }
 	.auth-card #title,
