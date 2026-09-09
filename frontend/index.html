@@ -6,23 +6,38 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link href="css/styles.css" rel="stylesheet">
 	<link href="css/accessibility.css" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body onload="onIndexLoad();">
+<body class="auth-page" onload="onIndexLoad();">
 
-<h1 id="title">Personal Contact Manager</h1>
+<!-- Initial page per spec: user must be able to log in OR register here. -->
+<!-- showLoginForm() / showRegisterForm() in js/auth.js swap the two cards.  -->
+<!-- Both cards live inside this one <main> so that whichever card is shown  -->
+<!-- sits in a landmark (axe: landmark-one-main, region). js/auth.js sets    -->
+<!-- style.display on the cards themselves, which this wrapper does not      -->
+<!-- touch.                                                                  -->
+<main class="auth-main">
 
-<!-- Initial page per spec: user must be able to log in OR register here -->
+<div id="loginDiv" class="auth-card reveal">
+	<div class="auth-head">
+		<span class="auth-mark" aria-hidden="true">
+			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+		</span>
+		<h1 id="title">Contacts</h1>
+		<p class="auth-lede">Log in to see your people.</p>
+	</div>
 
-<div id="loginDiv" class="reveal">
-	<span class="inner-title">PLEASE LOG IN</span>
-	<form id="loginForm" onsubmit="doLogin(); return false;">
-		<label for="loginUsername" class="visually-hidden">Username</label>
-		<input type="text" id="loginUsername" placeholder="Username" /><br />
-		<label for="loginPassword" class="visually-hidden">Password</label>
-		<input type="password" id="loginPassword" placeholder="Password" /><br />
-		<button type="submit" id="loginButton" class="buttons">Log In</button>
+	<form id="loginForm" class="auth-form" onsubmit="doLogin(); return false;">
+		<div class="field">
+			<label for="loginUsername">Username</label>
+			<input type="text" id="loginUsername" class="input" autocomplete="username" />
+		</div>
+		<div class="field">
+			<label for="loginPassword">Password</label>
+			<input type="password" id="loginPassword" class="input" autocomplete="current-password" />
+		</div>
 		<span id="loginResult" aria-live="polite"></span>
+		<button type="submit" id="loginButton" class="btn btn-primary btn-block">Log In</button>
 	</form>
 
 	<p class="switchText">
@@ -31,21 +46,40 @@
 	</p>
 </div>
 
-<div id="registerDiv" style="display:none;">
-	<span class="inner-title">CREATE AN ACCOUNT</span>
-	<form id="registerForm" onsubmit="doRegister(); return false;">
-		<label for="registerFirstName" class="visually-hidden">First Name</label>
-		<input type="text" id="registerFirstName" placeholder="First Name" /><br />
-		<label for="registerLastName" class="visually-hidden">Last Name</label>
-		<input type="text" id="registerLastName" placeholder="Last Name" /><br />
-		<label for="registerUsername" class="visually-hidden">Username</label>
-		<input type="text" id="registerUsername" placeholder="Username" /><br />
-		<label for="registerPassword" class="visually-hidden">Password</label>
-		<input type="password" id="registerPassword" placeholder="Password" /><br />
-		<label for="registerConfirmPassword" class="visually-hidden">Confirm Password</label>
-		<input type="password" id="registerConfirmPassword" placeholder="Confirm Password" /><br />
-		<button type="submit" id="registerButton" class="buttons">Sign Up</button>
+<div id="registerDiv" class="auth-card" style="display:none;">
+	<div class="auth-head">
+		<span class="auth-mark" aria-hidden="true">
+			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+		</span>
+		<h1 class="auth-title">Contacts</h1>
+		<p class="auth-lede">Create an account to start your list.</p>
+	</div>
+
+	<form id="registerForm" class="auth-form" onsubmit="doRegister(); return false;">
+		<div class="field-row">
+			<div class="field">
+				<label for="registerFirstName">First name</label>
+				<input type="text" id="registerFirstName" class="input" autocomplete="given-name" />
+			</div>
+			<div class="field">
+				<label for="registerLastName">Last name</label>
+				<input type="text" id="registerLastName" class="input" autocomplete="family-name" />
+			</div>
+		</div>
+		<div class="field">
+			<label for="registerUsername">Username</label>
+			<input type="text" id="registerUsername" class="input" autocomplete="username" />
+		</div>
+		<div class="field">
+			<label for="registerPassword">Password</label>
+			<input type="password" id="registerPassword" class="input" autocomplete="new-password" />
+		</div>
+		<div class="field">
+			<label for="registerConfirmPassword">Confirm password</label>
+			<input type="password" id="registerConfirmPassword" class="input" autocomplete="new-password" />
+		</div>
 		<span id="registerResult" aria-live="polite"></span>
+		<button type="submit" id="registerButton" class="btn btn-primary btn-block">Sign Up</button>
 	</form>
 
 	<p class="switchText">
@@ -53,6 +87,8 @@
 		<a href="#" onclick="showLoginForm(); return false;">Log in here</a>
 	</p>
 </div>
+
+</main>
 
 <script type="text/javascript" src="js/config.js"></script>
 <script type="text/javascript" src="js/api.js"></script>

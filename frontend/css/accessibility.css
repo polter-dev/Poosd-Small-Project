@@ -1,6 +1,8 @@
-/* ---- Accessibility widget (floating button, bottom-right) ---- */
-/* Self-contained: only reads the same --color-* variables as styles.css, */
-/* so it stays on-brand automatically and reacts to high-contrast mode. */
+/* ---- Accessibility widget (floating button, bottom-right on desktop) ---- */
+/* Reads the shared design tokens defined in :root by styles.css           */
+/* (--bg, --surface, --raised, --raised-hover, --border-hover, --text,     */
+/* --text-muted, --accent, --accent-hover, --danger, --on-accent, --scrim) */
+/* so it stays on-brand automatically and reacts to high-contrast mode.    */
 /* Include this file + js/accessibility.js on any page to get the widget. */
 
 #a11y-widget
@@ -8,36 +10,43 @@
 	position: fixed;
 	right: 20px;
 	bottom: 20px;
-	z-index: 9999;
-	font-family: 'Ubuntu', sans-serif;
+	z-index: 1300; /* above the toast (1200) and phone FAB (900) it must clear */
+	font-family: 'Figtree', sans-serif;
 	text-align: left;
 }
 
 #a11yToggleBtn
 {
-	width: 56px;
-	height: 56px;
-	border-radius: 50%;
-	border: none;
-	background-color: var(--color-accent);
-	color: var(--color-light);
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+	width: 48px;
+	height: 48px;
+	min-width: 40px;
+	min-height: 40px;
+	border-radius: 999px;
+	border: 1px solid var(--raised, #2E2E34);
+	background-color: var(--accent, #9DB0CC);
+	color: var(--on-accent, #18181B);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, .4);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: opacity 0.15s ease;
+	transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
 }
 
 #a11yToggleBtn:hover
 {
-	opacity: 0.85;
+	background-color: var(--accent-hover, #B3C3DA);
+}
+
+#a11yToggleBtn:active
+{
+	transform: scale(.96);
 }
 
 #a11yToggleBtn svg
 {
-	width: 30px;
-	height: 30px;
+	width: 26px;
+	height: 26px;
 	fill: currentColor;
 }
 
@@ -45,13 +54,15 @@
 {
 	position: absolute;
 	right: 0;
-	bottom: 68px;
+	bottom: 60px;
 	width: 240px;
-	background-color: var(--color-dark);
-	color: var(--color-light);
-	border-radius: 10px;
-	padding: 14px;
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+	max-width: calc(100vw - 40px);
+	background-color: var(--surface, #232327);
+	color: var(--text, #E9E9EC);
+	border: 1px solid var(--raised, #2E2E34);
+	border-radius: 16px;
+	padding: 16px;
+	box-shadow: 0 12px 32px rgba(0, 0, 0, .4);
 	box-sizing: border-box;
 }
 
@@ -65,35 +76,46 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 10px;
+	margin-bottom: 12px;
 }
 
 .a11y-panel-title
 {
-	font-size: 15px;
-	font-weight: bold;
+	font-family: 'Figtree', sans-serif;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--text, #E9E9EC);
 }
 
 #a11yCloseBtn
 {
+	width: 28px;
+	height: 28px;
+	min-width: 28px;
+	min-height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	background: none;
 	border: none;
-	color: var(--color-light);
+	color: var(--text-muted, #9A9AA5);
 	font-size: 18px;
 	line-height: 1;
 	cursor: pointer;
-	padding: 2px 6px;
-	border-radius: 4px;
+	padding: 0;
+	border-radius: 999px;
+	transition: background-color .15s ease, color .15s ease;
 }
 
 #a11yCloseBtn:hover
 {
-	opacity: 0.75;
+	background-color: var(--raised, #2E2E34);
+	color: var(--text, #E9E9EC);
 }
 
 .a11y-section
 {
-	margin-bottom: 10px;
+	margin-bottom: 12px;
 }
 
 .a11y-section:last-child
@@ -104,9 +126,11 @@
 .a11y-section-label
 {
 	display: block;
+	font-family: 'Figtree', sans-serif;
 	font-size: 12px;
-	opacity: 0.85;
-	margin-bottom: 6px;
+	font-weight: 600;
+	color: var(--text-muted, #9A9AA5);
+	margin-bottom: 8px;
 }
 
 .a11y-btn-row
@@ -119,14 +143,18 @@
 .a11y-toggle
 {
 	flex: 1;
-	font-family: 'Ubuntu', sans-serif;
-	font-size: 13px;
-	border-radius: 20px;
-	border: 1px solid var(--color-accent);
-	background-color: var(--color-darkest);
-	color: var(--color-light);
-	padding: 6px 4px;
+	font-family: 'Figtree', sans-serif;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 999px;
+	border: 1px solid var(--raised-hover, #3A3A41);
+	background-color: transparent;
+	color: var(--text, #E9E9EC);
+	padding: 8px 4px;
+	min-height: 40px;
+	box-sizing: border-box;
 	cursor: pointer;
+	transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 
 .a11y-toggle
@@ -138,25 +166,34 @@
 
 .a11y-toggle:disabled
 {
-	opacity: 0.4;
+	opacity: .4;
 	cursor: not-allowed;
 }
 
-.a11y-btn-row button:hover,
+.a11y-btn-row button:hover:not(:disabled),
 .a11y-toggle:not(:disabled):hover
 {
-	opacity: 0.8;
+	background-color: var(--raised, #2E2E34);
+	border-color: var(--border-hover, #4A4A55);
 }
 
 .a11y-toggle[aria-pressed="true"]
 {
-	background-color: var(--color-accent);
-	font-weight: bold;
+	background-color: var(--accent, #9DB0CC);
+	border-color: var(--accent, #9DB0CC);
+	color: var(--on-accent, #18181B);
+	font-weight: 700;
+}
+
+.a11y-toggle[aria-pressed="true"]:hover
+{
+	background-color: var(--accent-hover, #B3C3DA);
+	border-color: var(--accent-hover, #B3C3DA);
 }
 
 #a11y-widget button:focus-visible
 {
-	outline: 3px solid var(--color-light);
+	outline: 2px solid var(--accent, #9DB0CC);
 	outline-offset: 2px;
 }
 
@@ -171,66 +208,110 @@
 	}
 }
 
+/* Phone: the redesign puts a 56px "+" FAB at bottom-right (right:20px,
+   bottom:24px) and a bottom-center toast (bottom:24px) here, so move the
+   widget to the bottom-left corner -- clear of both -- and bump tap
+   targets to the 44px phone minimum. */
+@media (max-width: 599px)
+{
+	#a11y-widget
+	{
+		left: 16px;
+		right: auto;
+		bottom: 16px;
+	}
+
+	#a11yToggleBtn
+	{
+		width: 52px;
+		height: 52px;
+	}
+
+	#a11yPanel
+	{
+		left: 0;
+		right: auto;
+	}
+
+	.a11y-btn-row button,
+	.a11y-toggle,
+	#a11yCloseBtn
+	{
+		min-height: 44px;
+	}
+}
+
+/* When a modal dialog is open -- .modal-overlay.open (add/edit-contact
+   panel, including its phone bottom sheet) or .dialog-overlay.open (the
+   delete-confirmation dialog, z-index 1100) -- hide the widget entirely.
+   Its fixed position can otherwise sit on top of the dialog's own controls:
+   at 390px the bottom-left widget overlaps the left edge of the edit
+   sheet's "Delete this contact" button, making that region unclickable,
+   and the same z-index gap (widget 1300 vs. dialog-overlay 1100) applies to
+   the delete-confirmation dialog too. The widget also lives outside
+   whichever dialog's focus trap is active while it's open. Hiding it
+   (rather than lowering its z-index below the scrim) avoids leaving a
+   confusing, half-visible control behind the overlay, and removes it from
+   the tab order for as long as a dialog is open, which resolves the
+   focus-trap gap too. It reappears the instant the dialog closes; its
+   state (contrast mode, zoom level, open/closed panel) is untouched. */
+body:has(.modal-overlay.open, .dialog-overlay.open) #a11y-widget
+{
+	display: none;
+}
+
 /* ---- High contrast theme ---- */
-/* Overriding the same custom properties the rest of styles.css already */
-/* reads means every existing rule (buttons, panels, table) picks this up */
-/* automatically -- no need to duplicate/override each selector. */
+/* Overrides the same shared design tokens the rest of styles.css reads,   */
+/* so every existing rule (buttons, panels, cards) picks up a maximum-     */
+/* contrast palette automatically -- no need to duplicate/override each   */
+/* selector across files this widget doesn't own. This is a near-black /  */
+/* near-white / bright-yellow variant of the dark theme, not the old      */
+/* light theme -- computed ratios (WCAG 2.1, sRGB relative luminance):    */
+/*   --text on --bg        21.00:1  --text on --surface      19.80:1     */
+/*   --text-muted on --bg  14.88:1  --text-muted on --surface 14.03:1    */
+/*   --accent on --bg      15.60:1  --on-accent on --accent   15.60:1    */
+/*   --danger on --bg       7.57:1  --danger on --surface      7.13:1    */
+/*   --accent-soft on --surface     15.92:1                              */
+/*   --accent on --raised (avatar-initials pair)         4.82:1          */
+/*   --raised(border) on --surface  3.05:1 (>= 3:1 UI-component minimum) */
+/*   --text on --raised-hover (menu-item/profile-bubble hover) 4.61:1    */
+/* All comfortably clear the 4.5:1 body-text / 3:1 large-text-and-UI     */
+/* floors, including the 13px/700 avatar-initials pair (--accent on      */
+/* --raised) which failed at the old #FFD400-on-#666666 values (4.01:1). */
+/* --raised was darkened and --accent brightened slightly so that pair   */
+/* clears 4.5:1 while --raised (used as border/divider) still clears the */
+/* 3:1 UI-component minimum against --surface. --raised-hover was        */
+/* likewise darkened from #787878 (4.42:1, below floor) to #757575 so    */
+/* --text on --raised-hover clears 4.5:1 for normal-weight hover text    */
+/* (#profileMenu .menu-item:hover, .profile-bubble:hover in styles.css), */
+/* while its border use (.btn-outline, .a11y-btn-row) still clears 3:1.  */
 html.a11y-high-contrast
 {
-	--color-darkest: #000000;
-	--color-dark: #000000;
-	--color-accent: #ffd400;
-	--color-accent-hover: #e6c000;
-	--color-light: #ffffff;
+	--bg: #000000;
+	--surface: #0A0A0A;
+	--raised: #5E5E5E;
+	--raised-hover: #757575;
+	--border-hover: #FFFFFF;
+	--text: #FFFFFF;
+	--text-muted: #D9D9D9;
+	--accent: #FFDD00;
+	--accent-hover: #FFE64D;
+	--accent-soft: #FFE680;
+	--danger: #FF6B6B;
+	--danger-hover: #FF9E9E;
+	--on-accent: #000000;
+	--scrim: rgba(0, 0, 0, .85);
 }
 
 html.a11y-high-contrast body
 {
-	background: #000000;
-}
-
-/* Only elements that keep a yellow (--color-accent) background in high
-   contrast mode need black text -- .a11y-toggle/.a11y-btn-row buttons sit on
-   --color-darkest (black in this mode), so forcing black text on them here
-   would make it unreadable against their own background. */
-html.a11y-high-contrast .buttons,
-html.a11y-high-contrast #a11yToggleBtn,
-html.a11y-high-contrast .a11y-toggle[aria-pressed="true"],
-html.a11y-high-contrast #contactsTable th
-{
-	color: #000000;
-}
-
-html.a11y-high-contrast .a11y-toggle,
-html.a11y-high-contrast .a11y-btn-row button
-{
-	color: #ffffff;
-}
-
-html.a11y-high-contrast input[type="text"],
-html.a11y-high-contrast input[type="password"]
-{
-	border: 2px solid #ffd400;
-}
-
-html.a11y-high-contrast #loginResult,
-html.a11y-high-contrast #registerResult,
-html.a11y-high-contrast #addContactResult,
-html.a11y-high-contrast #editContactResult,
-html.a11y-high-contrast #searchResult
-{
-	color: #ff6b6b;
-	font-weight: bold;
-}
-
-html.a11y-high-contrast .switchText a
-{
-	text-decoration: underline;
+	background: var(--bg, #000000);
+	color: var(--text, #FFFFFF);
 }
 
 html.a11y-high-contrast *:focus-visible
 {
-	outline: 3px solid #ffd400 !important;
+	outline: 2px solid var(--accent, #FFDD00) !important;
 	outline-offset: 2px;
 }
 
