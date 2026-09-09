@@ -2,12 +2,20 @@
 // SearchContacts.php
 // Returns the logged-in user's contacts, optionally filtered by a search term.
 //
-// Expects JSON in the POST body:  { "userId", "search" }
+// Expects JSON in the POST body:  { "userId", "search", "field" }
 // Always answers with JSON:       { "results": [ ... ], "error" }
 //
 // Each entry in "results" looks like { "id", "firstName", "lastName", "phone",
 // "email" }. An empty "search" returns ALL of that user's contacts -- the
 // contacts page calls this on load with an empty term to fill the table.
+//
+// "field" narrows which column(s) the term is matched against:
+//   "all" (default) -- FirstName OR LastName OR Phone OR Email (original behavior)
+//   "name"           -- FirstName OR LastName
+//   "phone"          -- Phone only
+//   "email"          -- Email only
+// Omitting "field" (older clients) or sending anything not in that list falls
+// back to "all", so this is backward compatible with every existing caller.
 //
 // Finding nothing is NOT an error: zero matches comes back as
 // { "results": [], "error": "" }. The front end decides on its own to show
@@ -26,6 +34,12 @@ $userId = getIdField($in, 'userId');
 // client left out or sent as the wrong type -- and "" is a perfectly valid
 // search here, meaning "everything", so no further check is needed.
 $search = getTextField($in, 'search');
+
+$VALID_FIELDS = ['all', 'name', 'phone', 'email'];
+$field = getTextField($in, 'field');
+if (!in_array($field, $VALID_FIELDS, true)) {
+    $field = 'all';
+}
 
 // Step 1: the userId must identify a real, logged-in user. Every query below is
 // scoped to this id, so a bad one can only ever return an empty list.
@@ -77,17 +91,49 @@ if ($search === '') {
     $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
     $pattern = '%' . $escaped . '%';
 
-    $stmt = $conn->prepare(
-        "SELECT ID, FirstName, LastName, Phone, Email
-           FROM Contacts
-          WHERE UserID = ?
-            AND (FirstName LIKE ? OR LastName LIKE ? OR Phone LIKE ? OR Email LIKE ?)
-          ORDER BY LastName, FirstName, ID"
-    );
+    // Which column(s) the pattern is compared against depends on $field --
+    // one prepared statement per case rather than building the WHERE clause
+    // (and the matching bind_param arg list) dynamically from a whitelist.
+    if ($field === 'name') {
+        $stmt = $conn->prepare(
+            "SELECT ID, FirstName, LastName, Phone, Email
+               FROM Contacts
+              WHERE UserID = ?
+                AND (FirstName LIKE ? OR LastName LIKE ?)
+              ORDER BY LastName, FirstName, ID"
+        );
+        $stmt->bind_param("iss", $userId, $pattern, $pattern);
+    } elseif ($field === 'phone') {
+        $stmt = $conn->prepare(
+            "SELECT ID, FirstName, LastName, Phone, Email
+               FROM Contacts
+              WHERE UserID = ?
+                AND Phone LIKE ?
+              ORDER BY LastName, FirstName, ID"
+        );
+        $stmt->bind_param("is", $userId, $pattern);
+    } elseif ($field === 'email') {
+        $stmt = $conn->prepare(
+            "SELECT ID, FirstName, LastName, Phone, Email
+               FROM Contacts
+              WHERE UserID = ?
+                AND Email LIKE ?
+              ORDER BY LastName, FirstName, ID"
+        );
+        $stmt->bind_param("is", $userId, $pattern);
+    } else {
+        $stmt = $conn->prepare(
+            "SELECT ID, FirstName, LastName, Phone, Email
+               FROM Contacts
+              WHERE UserID = ?
+                AND (FirstName LIKE ? OR LastName LIKE ? OR Phone LIKE ? OR Email LIKE ?)
+              ORDER BY LastName, FirstName, ID"
+        );
 
-    // One type letter per placeholder: "i" for the integer UserID, then four
-    // "s" because the SAME pattern is compared against each of the four columns.
-    $stmt->bind_param("issss", $userId, $pattern, $pattern, $pattern, $pattern);
+        // One type letter per placeholder: "i" for the integer UserID, then four
+        // "s" because the SAME pattern is compared against each of the four columns.
+        $stmt->bind_param("issss", $userId, $pattern, $pattern, $pattern, $pattern);
+    }
 }
 
 $stmt->execute();

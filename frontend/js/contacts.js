@@ -69,12 +69,20 @@ function searchContacts()
 	searchDebounceTimer = setTimeout(function()
 	{
 		let searchTerm = document.getElementById("searchText").value;
+		let searchField = document.getElementById("searchField");
 
 		showLoadingSkeletons();
 		setSearchResultText("Searching…", false);
 		announce("Searching…");
 
-		let payload = { userId: currentSession.userId, search: searchTerm };
+		// "field" narrows which column(s) SearchContacts.php matches the term
+		// against ("all" | "name" | "phone" | "email"); an older/missing
+		// control just falls back to "all" on the server.
+		let payload = {
+			userId: currentSession.userId,
+			search: searchTerm,
+			field: searchField ? searchField.value : "all"
+		};
 		let requestId = ++latestSearchRequestId;
 
 		callApi("SearchContacts", payload, function(response)

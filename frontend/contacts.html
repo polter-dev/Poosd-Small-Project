@@ -18,10 +18,21 @@
 
 	<!-- Server-side search: the query is sent to the API on every keystroke, -->
 	<!-- results are never filtered from a locally cached contact list.       -->
-	<div id="searchDiv" class="search">
-		<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-		<label for="searchText" class="visually-hidden">Search Contacts</label>
-		<input type="text" id="searchText" placeholder="Search contacts&hellip;" autocomplete="off" oninput="searchContacts();" />
+	<!-- #searchField narrows which column SearchContacts.php matches against -->
+	<!-- (all/name/phone/email) -- see js/contacts.js:searchContacts().       -->
+	<div class="search-row">
+		<div id="searchDiv" class="search">
+			<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+			<label for="searchText" class="visually-hidden">Search Contacts</label>
+			<input type="text" id="searchText" placeholder="Search contacts&hellip;" autocomplete="off" oninput="searchContacts();" />
+		</div>
+		<label for="searchField" class="visually-hidden">Search by</label>
+		<select id="searchField" class="search-field" onchange="searchContacts();">
+			<option value="all" selected>All fields</option>
+			<option value="name">Name</option>
+			<option value="phone">Phone</option>
+			<option value="email">Email</option>
+		</select>
 	</div>
 
 	<div id="accountControls">
