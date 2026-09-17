@@ -1,8 +1,6 @@
 // Every endpoint this calls (request/response shape, expected behavior) is
 // spec'd in docs/api-contract.md -- check there before wiring up a new call
 // or building the PHP side of one.
-//
-// TODO: point this at the deployed API once it's hosted, e.g. "https://api.yourdomain.com/API"
 const urlBase = '/API';
 const extension = 'php';
 
@@ -10,13 +8,17 @@ const extension = 'php';
 // The server is always the source of truth for which contacts belong to this user.
 const SESSION_COOKIE_MINUTES = 30;
 
+// Site is HTTPS-only (Secure) and cookies are never cross-site (SameSite=Lax).
+const SESSION_COOKIE_ATTRS = ";path=/;Secure;SameSite=Lax";
+
 function saveSession(userId, firstName, lastName)
 {
 	let date = new Date();
 	date.setTime(date.getTime() + (SESSION_COOKIE_MINUTES * 60 * 1000));
-	document.cookie = "userId=" + userId + ";expires=" + date.toGMTString() + ";path=/";
-	document.cookie = "firstName=" + firstName + ";expires=" + date.toGMTString() + ";path=/";
-	document.cookie = "lastName=" + lastName + ";expires=" + date.toGMTString() + ";path=/";
+	let expires = ";expires=" + date.toGMTString() + SESSION_COOKIE_ATTRS;
+	document.cookie = "userId=" + encodeURIComponent(userId) + expires;
+	document.cookie = "firstName=" + encodeURIComponent(firstName) + expires;
+	document.cookie = "lastName=" + encodeURIComponent(lastName) + expires;
 }
 
 function readSession()
@@ -26,18 +28,27 @@ function readSession()
 
 	for (let i = 0; i < splits.length; i++)
 	{
-		let tokens = splits[i].trim().split("=");
-		if (tokens[0] === "userId")
+		let cookie = splits[i].trim();
+		let separatorIndex = cookie.indexOf("=");
+		if (separatorIndex === -1)
 		{
-			session.userId = parseInt(tokens[1]);
+			continue;
 		}
-		else if (tokens[0] === "firstName")
+
+		let name = cookie.slice(0, separatorIndex);
+		let value = decodeURIComponent(cookie.slice(separatorIndex + 1));
+
+		if (name === "userId")
 		{
-			session.firstName = tokens[1];
+			session.userId = parseInt(value);
 		}
-		else if (tokens[0] === "lastName")
+		else if (name === "firstName")
 		{
-			session.lastName = tokens[1];
+			session.firstName = value;
+		}
+		else if (name === "lastName")
+		{
+			session.lastName = value;
 		}
 	}
 
@@ -46,7 +57,8 @@ function readSession()
 
 function clearSession()
 {
-	document.cookie = "userId=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-	document.cookie = "firstName=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-	document.cookie = "lastName=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+	let expired = ";expires=Thu, 01 Jan 1970 00:00:00 GMT" + SESSION_COOKIE_ATTRS;
+	document.cookie = "userId=" + expired;
+	document.cookie = "firstName=" + expired;
+	document.cookie = "lastName=" + expired;
 }

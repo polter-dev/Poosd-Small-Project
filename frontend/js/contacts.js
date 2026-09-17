@@ -11,6 +11,11 @@
 let currentSession = null;
 let searchDebounceTimer = null;
 
+// currentSession doesn't go stale on its own when the cookie expires, so
+// this polls readSession() to catch that while the page stays open.
+let sessionCheckIntervalId = null;
+const SESSION_CHECK_INTERVAL_MS = 20000;
+
 // Responses can arrive out of order (a slow query issued first can land after
 // a fast one issued later), which would repaint the grid with results the
 // user has already typed past. Only the newest request is allowed to render.
@@ -46,6 +51,8 @@ function onContactsLoad()
 	wireSortToggle();
 	wireCopyButtons();
 	wireDeleteDialog();
+
+	sessionCheckIntervalId = window.setInterval(checkSessionStillValid, SESSION_CHECK_INTERVAL_MS);
 
 	// Below 600px the per-card edit/delete buttons are hidden and the whole
 	// card becomes the edit affordance, so the cards have to be rebuilt when
@@ -85,7 +92,7 @@ function searchContacts()
 		};
 		let requestId = ++latestSearchRequestId;
 
-		callApi("SearchContacts", payload, function(response)
+		callApiWithDeadline("SearchContacts", payload, function(response)
 		{
 			if (requestId !== latestSearchRequestId)
 			{
@@ -127,6 +134,41 @@ function searchContacts()
 			showRequestError(errorMessage);
 		});
 	}, 250); // small debounce so we're not hitting the API on every keystroke
+}
+
+// ---- Session expiry ------------------------------------------------------
+
+function checkSessionStillValid()
+{
+	if (readSession().userId < 1)
+	{
+		showSessionExpired();
+	}
+}
+
+function showSessionExpired()
+{
+	let overlay = document.getElementById("sessionExpiredOverlay");
+	if (!overlay || overlay.classList.contains("open"))
+	{
+		return;
+	}
+
+	if (sessionCheckIntervalId !== null)
+	{
+		window.clearInterval(sessionCheckIntervalId);
+		sessionCheckIntervalId = null;
+	}
+
+	overlay.classList.add("open");
+	document.addEventListener("keydown", onSessionExpiredKeydown);
+	focusOnceVisible(document.getElementById("sessionExpiredLoginButton"), document.getElementById("sessionExpiredDialog"));
+}
+
+// No Escape/outside-click dismissal -- Log In is the only way out.
+function onSessionExpiredKeydown(event)
+{
+	trapFocusWithinPanel(event, document.getElementById("sessionExpiredDialog"));
 }
 
 // A failed search leaves neither cards nor the "no contacts yet" empty state:
@@ -204,7 +246,7 @@ function refreshTotalCount()
 		return; // the pending searchContacts() call already refreshes it
 	}
 
-	callApi("SearchContacts", { userId: currentSession.userId, search: "" }, function(response)
+	callApiWithDeadline("SearchContacts", { userId: currentSession.userId, search: "" }, function(response)
 	{
 		if (response.error)
 		{
@@ -823,54 +865,8 @@ function onAddContactOutsideClick(event)
 	}
 }
 
-// js/api.js is the shared request helper for every page and deliberately has
-// no timeout, so a request that never resolves (mobile dead zone, hung proxy,
-// a stalled route) leaves the in-flight latch set forever: the button stays
-// disabled, the delete dialog refuses to close, and the only way out is a page
-// reload. Rather than change the shared helper, every mutating call on this
-// page goes through this wrapper, which owns a client-side deadline and a
-// one-shot settle flag. The flag matters as much as the timer: once the
-// deadline has fired and the user has been given the controls back, a late
-// response must NOT run the success path -- it would re-close a dialog the
-// user has already reopened, toast a delete that also errored, and re-render
-// the grid twice.
-const REQUEST_DEADLINE_MS = 15000;
-const REQUEST_TIMEOUT_MESSAGE = "The server did not respond. Please try again.";
-
-function callApiWithDeadline(endpointName, payload, onSuccess, onError)
-{
-	let settled = false;
-
-	let timer = window.setTimeout(function()
-	{
-		if (settled)
-		{
-			return;
-		}
-		settled = true;
-		onError(REQUEST_TIMEOUT_MESSAGE);
-	}, REQUEST_DEADLINE_MS);
-
-	function settle(run, arg)
-	{
-		if (settled)
-		{
-			return; // deadline already released the UI; this answer is stale
-		}
-		settled = true;
-		window.clearTimeout(timer);
-		run(arg);
-	}
-
-	callApi(endpointName, payload, function(response)
-	{
-		settle(onSuccess, response);
-	},
-	function(message)
-	{
-		settle(onError, message);
-	});
-}
+// Every mutating call on this page uses callApiWithDeadline (js/api.js) so a
+// hung request can't leave a button or dialog stuck forever.
 
 // A double-click (or double-tap on a slow connection) used to fire two
 // AddContact calls and create two rows. Guard the handler and disable the
