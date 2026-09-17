@@ -8,8 +8,10 @@ const extension = 'php';
 // The server is always the source of truth for which contacts belong to this user.
 const SESSION_COOKIE_MINUTES = 30;
 
-// Site is HTTPS-only (Secure) and cookies are never cross-site (SameSite=Lax).
-const SESSION_COOKIE_ATTRS = ";path=/;Secure;SameSite=Lax";
+// Secure is only added when actually served over HTTPS, so local http://
+// development (see docs/api-contract.md) doesn't have its cookies silently
+// dropped by the browser. Cookies are never cross-site (SameSite=Lax).
+const SESSION_COOKIE_ATTRS = ";path=/;SameSite=Lax" + (location.protocol === "https:" ? ";Secure" : "");
 
 function saveSession(userId, firstName, lastName)
 {
@@ -36,7 +38,21 @@ function readSession()
 		}
 
 		let name = cookie.slice(0, separatorIndex);
-		let value = decodeURIComponent(cookie.slice(separatorIndex + 1));
+		if (name !== "userId" && name !== "firstName" && name !== "lastName")
+		{
+			continue;
+		}
+
+		let rawValue = cookie.slice(separatorIndex + 1);
+		let value;
+		try
+		{
+			value = decodeURIComponent(rawValue);
+		}
+		catch (e)
+		{
+			value = rawValue;
+		}
 
 		if (name === "userId")
 		{

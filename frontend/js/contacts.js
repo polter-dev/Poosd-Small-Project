@@ -51,6 +51,7 @@ function onContactsLoad()
 	wireSortToggle();
 	wireCopyButtons();
 	wireDeleteDialog();
+	wireSessionRefresh();
 
 	sessionCheckIntervalId = window.setInterval(checkSessionStillValid, SESSION_CHECK_INTERVAL_MS);
 
@@ -137,6 +138,39 @@ function searchContacts()
 }
 
 // ---- Session expiry ------------------------------------------------------
+
+// Extends the session cookie while the user is actually interacting with the
+// page, so a continuously-active user is never dropped into the (deliberately
+// non-dismissible) expired-session dialog just for taking longer than
+// SESSION_COOKIE_MINUTES to finish what they're doing. Throttled so it isn't
+// rewriting the cookie on every keystroke/click.
+const SESSION_REFRESH_THROTTLE_MS = 60000;
+let lastSessionRefreshTime = 0;
+
+function wireSessionRefresh()
+{
+	["click", "keydown"].forEach(function(eventName)
+	{
+		document.addEventListener(eventName, refreshSessionIfActive);
+	});
+}
+
+function refreshSessionIfActive()
+{
+	if (!currentSession || currentSession.userId < 1)
+	{
+		return;
+	}
+
+	let now = Date.now();
+	if (now - lastSessionRefreshTime < SESSION_REFRESH_THROTTLE_MS)
+	{
+		return;
+	}
+	lastSessionRefreshTime = now;
+
+	saveSession(currentSession.userId, currentSession.firstName, currentSession.lastName);
+}
 
 function checkSessionStillValid()
 {
