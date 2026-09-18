@@ -3,7 +3,7 @@
 // or building the PHP side of one.
 //
 // TODO: point this at the deployed API once it's hosted, e.g. "https://api.yourdomain.com/API"
-const urlBase = 'http://localhost/API';
+const urlBase = '/API';
 const extension = 'php';
 
 // Session is stored client-side only as a pointer (userId + display name).

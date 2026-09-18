@@ -30,7 +30,7 @@ human-readable message on failure.
 | `Register.php` | `{ "firstName", "lastName", "username", "password" }` | `{ "id", "firstName", "lastName", "error" }` | Rejects empty fields. Duplicate username → `id: 0`, `error: "Username already taken"`. |
 | `Login.php` | `{ "username", "password" }` | `{ "id", "firstName", "lastName", "error" }` | Bad credentials → `id: 0`, `error: "Username/password combination incorrect"`. |
 | `AddContact.php` | `{ "userId", "firstName", "lastName", "phone", "email" }` | `{ "id", "error" }` | `id` is the new contact's ID. |
-| `SearchContacts.php` | `{ "userId", "search" }` | `{ "results": [ { "id", "firstName", "lastName", "phone", "email" }, ... ], "error" }` | Partial match on first name, last name, phone, email. Empty `search` returns **all** of that user's contacts. Zero matches → `results: []` and `error: ""` (not an error). |
+| `SearchContacts.php` | `{ "userId", "search", "field" }` | `{ "results": [ { "id", "firstName", "lastName", "phone", "email" }, ... ], "error" }` | `field` is optional: `"all"` (default) matches first name, last name, phone, and email; `"name"` matches first/last name only; `"phone"` or `"email"` match that column only. Omitting `field`, or sending anything not in that list, behaves as `"all"` — existing callers are unaffected. Empty `search` returns **all** of that user's contacts regardless of `field`. Zero matches → `results: []` and `error: ""` (not an error). |
 | `EditContact.php` | `{ "userId", "id", "firstName", "lastName", "phone", "email" }` | `{ "error" }` | Only updates the row where `ID = id AND UserID = userId`. |
 | `DeleteContact.php` | `{ "userId", "id" }` | `{ "error" }` | Only deletes the row where `ID = id AND UserID = userId`. |
 

@@ -128,7 +128,15 @@
 		var widget = document.getElementById("a11y-widget");
 		var chunks = [];
 
-		var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
+		// A modal dialog (.modal-overlay.open) visually covers the rest of the
+		// page via position:fixed + z-index, without changing the covered
+		// elements' own display/visibility -- so isElementVisible() alone
+		// still finds them "visible" and would read them interleaved with the
+		// modal's own content. When one is open, only read its contents.
+		var openModalPanel = document.querySelector(".modal-overlay.open .modal-panel");
+		var root = openModalPanel || document.body;
+
+		var walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, {
 			acceptNode: function(node)
 			{
 				if (!isElementVisible(node, widget))
