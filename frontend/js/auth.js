@@ -96,11 +96,9 @@ function doLogin()
 	let resultSpan = document.getElementById("loginResult");
 	clearResult("loginResult");
 
-	// TODO: hash password client-side (e.g. with a bundled md5/sha256 lib) to
-	// match whatever the backend expects before comparing against the DB.
 	let payload = { username: username, password: password };
 
-	callApi("Login", payload, function(response)
+	callApiWithDeadline("Login", payload, function(response)
 	{
 		if (!response.id || response.id < 1)
 		{
@@ -146,7 +144,7 @@ function doRegister()
 		password: password
 	};
 
-	callApi("Register", payload, function(response)
+	callApiWithDeadline("Register", payload, function(response)
 	{
 		if (!response.id || response.id < 1)
 		{
