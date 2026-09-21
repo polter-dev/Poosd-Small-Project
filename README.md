@@ -3,3 +3,8 @@ A full-stack Personal Contact Manager built with the LAMP stack. Users can regis
 
 # Live URL to the website
 https://contacts.cop4331ruth.lol/
+
+# API documentation (SwaggerHub)
+https://app.swaggerhub.com/apis/monklys/Personal_Contact_Manager_API/1.0.0
+
+The same definition is committed at `docs/swagger.yaml`.
