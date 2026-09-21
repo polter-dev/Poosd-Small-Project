@@ -8,6 +8,15 @@
 // On success the front end stores the returned id and uses it for every later
 // contact request. On failure the id is 0 and "error" explains what happened.
 
+// CORS: lets SwaggerHub's "Try it out" (a different origin) call this endpoint.
+// The site itself is same-origin, so only the SwaggerHub origin is allowed.
+header('Access-Control-Allow-Origin: https://app.swaggerhub.com');
+header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit();   // answer the browser's preflight check; no body needed
+}
+
 require_once 'db.php';
 
 $in = getRequestInfo();
