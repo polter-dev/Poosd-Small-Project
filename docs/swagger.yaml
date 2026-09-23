@@ -1,419 +1,142 @@
-swagger: '2.0'
+openapi: 3.0.0
 info:
-  description: >
-    API documentation for the COP 4331 Personal Contact Manager.
-
-    Every endpoint is a POST that takes a JSON body and answers with JSON.
-    Every response contains an "error" key: an empty string on success, or a
-    short human-readable message on failure. The HTTP status is 200 even for a
-    rejected request (bad password, duplicate username, contact not found) --
-    read the "error" field, not the status code, to tell success from failure.
-
-    The source of truth for this contract is docs/api-contract.md in the repo.
-    If the two ever disagree, that document wins and this file needs updating.
+  title: Personal Contact Manager API
   version: 1.0.0
-  title: Personal Contact Manager
-  # TODO: replace with the team contact address before publishing to SwaggerHub
-  contact:
-    email: team@example.com
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-
-# TODO: replace with the real deployed domain once the API is hosted.
-# frontend/js/config.js still points at the local dev placeholder
-# http://localhost/API, so this host is a guess until deployment is settled.
-host: COP4331-5.com
-# Our endpoints live in /API, not the /LAMPAPI used by the class demo.
-basePath: /API
-schemes:
-  - http
-
+  description: Login and contact search for the COP 4331 Personal Contact Manager.
+servers:
+  - description: Live server
+    url: https://contacts.cop4331ruth.lol
 paths:
-
-  /Register.php:
+  /API/Login.php:
     post:
-      tags:
-        - Users
-      summary: Creates a new user account
-      operationId: doRegister
-      description: >
-        Creates a user in the Users table. The password is hashed with PHP
-        password_hash() before it is stored -- the plain password is never
-        saved. On success the response carries the new user's id, which the
-        front end stores and sends with every later contact request.
-        A duplicate username is rejected with id 0 and an error message.
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: registerItem
-          description: New account details
-          schema:
-            $ref: '#/definitions/Register'
+      summary: Log in a user
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: "123"
+              password: "123"
       responses:
-        200:
-          description: OK
-          schema:
-            $ref: '#/definitions/AuthResponse'
-        404:
-          description: URL Not Found
-        500:
-          description: Server Error
-
-  /Login.php:
+        '200':
+          description: Login result. Bad credentials return id 0 and an error message.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                success:
+                  value:
+                    id: 13
+                    firstName: "123"
+                    lastName: "123"
+                    error: ""
+                badCredentials:
+                  value:
+                    id: 0
+                    firstName: ""
+                    lastName: ""
+                    error: Username/password combination incorrect
+  /API/SearchContacts.php:
     post:
-      tags:
-        - Users
-      summary: Logs in to the contact manager
-      operationId: doLogin
-      description: >
-        Checks a username and password against the Users table. On success the
-        response carries the user's id and display name. Bad credentials come
-        back as id 0 with the error "Username/password combination incorrect" --
-        the same message whether the username does not exist or the password is
-        wrong, so the response cannot be used to discover which accounts exist.
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: loginItem
-          description: Login credentials
-          schema:
-            $ref: '#/definitions/Login'
-      responses:
-        200:
-          description: OK
-          schema:
-            $ref: '#/definitions/AuthResponse'
-        404:
-          description: URL Not Found
-        500:
-          description: Server Error
-
-  /AddContact.php:
-    post:
-      tags:
-        - Contacts
-      summary: Adds a contact
-      operationId: addContact
-      description: >
-        Saves one new contact belonging to the given user. At least one of
-        firstName or lastName is required; phone and email are optional and may
-        be empty. On success "id" is the new contact's id.
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: contactItem
-          description: Contact to add
-          schema:
-            $ref: '#/definitions/AddContact'
-      responses:
-        200:
-          description: OK
-          schema:
-            $ref: '#/definitions/AddContactResponse'
-        404:
-          description: URL Not Found
-        500:
-          description: Server Error
-
-  /SearchContacts.php:
-    post:
-      tags:
-        - Search
-      summary: Searches contacts
+      summary: Search a user's contacts
       operationId: searchContacts
       description: >
-        Returns the user's contacts, filtered by a partial match on first name,
-        last name, phone or email. An empty search string returns all of that
-        user's contacts -- this is how the contacts page fills its table on
-        load. Finding nothing is not an error: zero matches comes back as an
-        empty results list with an empty error.
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: searchItem
-          description: Contact search
-          schema:
-            $ref: '#/definitions/Search'
+        Empty search returns all of the user's contacts. Zero matches returns
+        an empty results array with an empty error (not an error).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+            examples:
+              partialMatch:
+                value:
+                  userId: 13
+                  search: ad
+                  field: all
+              noMatch:
+                value:
+                  userId: 13
+                  search: zzzz
+                  field: all
       responses:
-        200:
-          description: OK
-          schema:
-            $ref: '#/definitions/SearchResponse'
-        404:
-          description: URL Not Found
-        500:
-          description: Server Error
-
-  /EditContact.php:
-    post:
-      tags:
-        - Contacts
-      summary: Edits a contact
-      operationId: editContact
-      description: >
-        Updates one existing contact. Only the row matching both the contact id
-        and the userId is touched, so a user can never edit someone else's
-        contact. All four text fields are written every time -- the edit form
-        sends the complete row, so a blank field means "clear this value".
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: editItem
-          description: Contact with its updated values
-          schema:
-            $ref: '#/definitions/EditContact'
-      responses:
-        200:
-          description: OK
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        404:
-          description: URL Not Found
-        500:
-          description: Server Error
-
-  /DeleteContact.php:
-    post:
-      tags:
-        - Contacts
-      summary: Deletes a contact
-      operationId: deleteContact
-      description: >
-        Permanently deletes one contact. Only the row matching both the contact
-        id and the userId is deleted, so a user can never delete someone else's
-        contact. An id that does not match returns the error "Contact not
-        found". There is no undo.
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: deleteItem
-          description: Contact to delete
-          schema:
-            $ref: '#/definitions/DeleteContact'
-      responses:
-        200:
-          description: OK
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        404:
-          description: URL Not Found
-        500:
-          description: Server Error
-
-definitions:
-
-  # ---------------------------------------------------------------------
-  # Request bodies
-  # ---------------------------------------------------------------------
-
-  Register:
-    type: object
-    required:
-      - firstName
-      - lastName
-      - username
-      - password
-    properties:
-      firstName:
-        type: string
-        example: "Jane"
-      lastName:
-        type: string
-        example: "Doe"
-      username:
-        type: string
-        example: "jane"
-      password:
-        type: string
-        example: "Password123"
-
-  Login:
-    type: object
-    required:
-      - username
-      - password
-    properties:
-      username:
-        type: string
-        example: "jane"
-      password:
-        type: string
-        example: "Password123"
-
-  AddContact:
-    type: object
-    required:
-      - userId
-      - firstName
-      - lastName
-      - phone
-      - email
-    properties:
-      userId:
-        type: integer
-        example: 1
-      firstName:
-        type: string
-        example: "Anna"
-      lastName:
-        type: string
-        example: "Reyes"
-      phone:
-        type: string
-        example: "407-555-0142"
-      email:
-        type: string
-        example: "anna.reyes@example.com"
-
-  Search:
-    type: object
-    required:
-      - userId
-      - search
-    properties:
-      userId:
-        type: integer
-        example: 1
-      search:
-        type: string
-        description: Partial term. An empty string returns every contact.
-        example: "an"
-
-  EditContact:
-    type: object
-    required:
-      - userId
-      - id
-      - firstName
-      - lastName
-      - phone
-      - email
-    properties:
-      userId:
-        type: integer
-        example: 1
-      id:
-        type: integer
-        description: The contact's id, from a SearchContacts result.
-        example: 3
-      firstName:
-        type: string
-        example: "Anna"
-      lastName:
-        type: string
-        example: "Reyes-Cole"
-      phone:
-        type: string
-        example: "407-555-0142"
-      email:
-        type: string
-        example: "anna.reyes@example.com"
-
-  DeleteContact:
-    type: object
-    required:
-      - userId
-      - id
-    properties:
-      userId:
-        type: integer
-        example: 1
-      id:
-        type: integer
-        description: The contact's id, from a SearchContacts result.
-        example: 3
-
-  # ---------------------------------------------------------------------
-  # Responses
-  # ---------------------------------------------------------------------
-
-  AuthResponse:
-    type: object
-    description: >
-      Returned by both Register.php and Login.php. On failure id is 0, the
-      names are empty strings, and error explains what went wrong.
-    properties:
-      id:
-        type: integer
-        example: 1
-      firstName:
-        type: string
-        example: "Jane"
-      lastName:
-        type: string
-        example: "Doe"
-      error:
-        type: string
-        example: ""
-
-  AddContactResponse:
-    type: object
-    description: On failure id is 0 and error explains what went wrong.
-    properties:
-      id:
-        type: integer
-        description: The new contact's id.
-        example: 3
-      error:
-        type: string
-        example: ""
-
-  SearchResponse:
-    type: object
-    properties:
-      results:
-        type: array
-        items:
-          $ref: '#/definitions/Contact'
-      error:
-        type: string
-        example: ""
-
-  Contact:
-    type: object
-    description: One row of a SearchContacts result.
-    properties:
-      id:
-        type: integer
-        example: 3
-      firstName:
-        type: string
-        example: "Anna"
-      lastName:
-        type: string
-        example: "Reyes"
-      phone:
-        type: string
-        example: "407-555-0142"
-      email:
-        type: string
-        example: "anna.reyes@example.com"
-
-  ErrorResponse:
-    type: object
-    description: >
-      Returned by EditContact.php and DeleteContact.php, which have nothing to
-      report but success or failure. An empty error means the call worked.
-    properties:
-      error:
-        type: string
-        example: ""
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+              examples:
+                partialMatch:
+                  value:
+                    results:
+                      - id: 19
+                        firstName: Ada
+                        lastName: Lovelace
+                        phone: "4075550142"
+                        email: ada.lovelace@example.com
+                    error: ""
+                emptyResult:
+                  value:
+                    results: []
+                    error: ""
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        error:
+          type: string
+    SearchRequest:
+      type: object
+      required: [userId, search]
+      properties:
+        userId:
+          type: integer
+        search:
+          type: string
+        field:
+          type: string
+          enum: [all, name, phone, email]
+          default: all
+    Contact:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+        error:
+          type: string

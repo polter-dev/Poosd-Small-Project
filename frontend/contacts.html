@@ -4,6 +4,8 @@
 	<title>My Contacts - Personal Contact Manager</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Search, add, edit, and delete your personal contacts.">
+	<link rel="icon" href="favicon.svg" type="image/svg+xml">
 	<link href="css/styles.css" rel="stylesheet">
 	<link href="css/accessibility.css" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -244,6 +246,19 @@
 		<div class="dialog-actions">
 			<button type="button" id="deleteKeepButton" class="btn btn-outline">Keep</button>
 			<button type="button" id="deleteConfirmButton" class="btn btn-danger">Delete</button>
+		</div>
+	</div>
+</div>
+
+<!-- Session-expired dialog: js/contacts.js polls for the 30-minute cookie   -->
+<!-- lapsing and opens this. No Escape/outside-click dismissal -- Log In is  -->
+<!-- the only way out.                                                       -->
+<div id="sessionExpiredOverlay" class="dialog-overlay">
+	<div id="sessionExpiredDialog" class="dialog modal-panel" role="dialog" aria-modal="true" aria-labelledby="sessionExpiredTitle" aria-describedby="sessionExpiredBody" tabindex="-1">
+		<h2 id="sessionExpiredTitle">Your session expired</h2>
+		<p id="sessionExpiredBody">Please log in again to keep working with your contacts.</p>
+		<div class="dialog-actions">
+			<button type="button" id="sessionExpiredLoginButton" class="btn btn-primary" onclick="doLogout();">Log In</button>
 		</div>
 	</div>
 </div>
