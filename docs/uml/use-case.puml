@@ -1,5 +1,5 @@
 @startuml use-case
-' Personal Contact Manager -- use case diagram
+' Contact Manager -- use case diagram
 ' The endpoint that implements each use case is named inside the oval.
 
 !theme plain
@@ -11,11 +11,11 @@ skinparam usecase {
   BorderColor Black
 }
 
-title Personal Contact Manager -- Use Cases
+title Use Cases
 
 actor "User" as user
 
-rectangle "Personal Contact Manager" {
+rectangle "Contact Manager" {
 
   package "Account" {
     usecase "Sign up\n<size:10><i>Register.php</i></size>" as UC_SIGNUP
@@ -40,9 +40,6 @@ user --> UC_ADD
 user --> UC_SEARCH
 user --> UC_EDIT
 user --> UC_DELETE
-
-UC_SIGNUP ..> UC_SESSION : <<create>>
-UC_LOGIN  ..> UC_SESSION : <<create>>
 
 UC_ADD    ..> UC_SESSION : <<include>>
 UC_SEARCH ..> UC_SESSION : <<include>>

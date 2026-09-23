@@ -1,5 +1,5 @@
 @startuml activity
-' Personal Contact Manager -- activity diagram
+' Contact Manager -- activity diagram
 ' Mirrors the real flow in frontend/js/auth.js and frontend/js/contacts.js.
 
 !theme plain
@@ -8,7 +8,7 @@ skinparam ActivityBackgroundColor White
 skinparam ActivityBorderColor Black
 skinparam ActivityDiamondBackgroundColor White
 
-title Personal Contact Manager -- Main User Flow
+title Main User Flow
 
 start
 
@@ -36,23 +36,28 @@ else (no)
   :Redirect to contacts.html;
 endif
 
-:requireLogin() checks the cookie;
+if (requireLogin(): is the cookie still there?) then (no: expired or cleared)
+  :Redirect to index.html;
+  stop
+else (yes)
+endif
+
 :POST SearchContacts.php with search = ""
 (an empty term returns every contact this user owns);
 :renderContacts(results);
 
 repeat
   switch (What does the user do?)
-  case (Add)
-    :Fill in the new-contact form;
-    :POST AddContact.php
-    { userId, firstName, lastName, phone, email };
   case (Search)
     :Type a term, pick a field
     (all / name / phone / email);
     :Wait 250 ms (debounce);
     :POST SearchContacts.php
     { userId, search, field };
+  case (Add)
+    :Fill in the new-contact form;
+    :POST AddContact.php
+    { userId, firstName, lastName, phone, email };
   case (Edit)
     :Open a card, change the fields;
     :POST EditContact.php
@@ -63,10 +68,14 @@ repeat
     { userId, id };
   endswitch
 
-  if (response.error is ""?) then (yes)
-    :Re-run the search and re-render the list;
-  else (no)
+  if (response.error is ""?) then (no)
     :Show the message the API returned;
+  else (yes)
+    if (Which action was it?) then (search)
+      :renderContacts(results);
+    else (add / edit / delete)
+      :Re-run the search, then renderContacts();
+    endif
   endif
 
 repeat while (Keep working?) is (yes) not (log out)
@@ -77,11 +86,13 @@ repeat while (Keep working?) is (yes) not (log out)
 stop
 
 note right
-  Every request above goes through one helper,
-  callApi() in frontend/js/api.js.
-  The API always answers HTTP 200 and reports
-  failure in the "error" field, so the success
-  path is where errors have to be caught.
+  Every request goes through callApiWithDeadline()
+  in frontend/js/api.js, which wraps callApi() with
+  a 15 second deadline.
+
+  The API always returns HTTP 200. Errors come back
+  in the error field, so the front end checks it on
+  every response.
 end note
 
 @enduml

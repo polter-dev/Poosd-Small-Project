@@ -1,5 +1,5 @@
 @startuml sequence-search
-' Personal Contact Manager -- sequence diagram for one search
+' Contact Manager -- sequence diagram for one search
 ' Traced from frontend/js/contacts.js -> frontend/js/api.js
 '   -> API/SearchContacts.php -> API/db.php -> MySQL
 
@@ -8,84 +8,88 @@ skinparam shadowing false
 skinparam sequenceMessageAlign center
 skinparam ParticipantBackgroundColor White
 skinparam ParticipantBorderColor Black
-skinparam maxMessageSize 220
 
-title Search Contacts -- User to MySQL and back
+title Search Contacts
 
 actor "User" as USER
-participant "contacts.js\n(browser)" as JS
-participant "callApi()\napi.js" as CALL
+participant "contacts.js" as JS
+participant "api.js" as CALL
 participant "SearchContacts.php" as PHP
-participant "db.php\nhelpers" as DB
-database "MySQL\nContactManager" as SQL
+participant "db.php" as DB
+database "MySQL" as SQL
 
-USER -> JS : types "ann" into the search box
+USER -> JS : types "ann"
 activate JS
 
-JS -> JS : debounce 250 ms, show skeletons,\nrequestId = ++latestSearchRequestId
+JS -> JS : debounce 250 ms
+JS -> JS : showLoadingSkeletons()
+JS -> JS : requestId = ++latestSearchRequestId
 
-JS -> CALL : callApi("SearchContacts",\n{ userId: 7, search: "ann", field: "all" })
+JS -> CALL : callApiWithDeadline("SearchContacts",\n{ userId: 7, search: "ann", field: "all" })
 activate CALL
 
-CALL -> PHP : POST /API/SearchContacts.php\nContent-Type: application/json
+CALL -> PHP : POST /API/SearchContacts.php
 activate PHP
 
 PHP -> DB : getRequestInfo()
-DB --> PHP : decoded JSON array
+DB --> PHP : decoded JSON
 
-PHP -> DB : getIdField("userId"),\ngetTextField("search"), getTextField("field")
+PHP -> DB : getIdField(), getTextField()
 DB --> PHP : 7, "ann", "all"
 
 alt userId is not a positive integer
-  PHP --> CALL : 200 { "results": [],\n"error": "A valid userId is required" }
-end
 
-PHP -> PHP : escape %, _ and the backslash,\nthen pattern = "%ann%"
+  PHP --> CALL : { "results": [], "error": "A valid userId is required" }
+  destroy PHP
 
-PHP -> DB : getDbConnection()
-DB -> SQL : mysqli connect (utf8mb4)
-DB --> PHP : connection
+else userId is valid
 
-PHP -> SQL : prepare + bind_param("issss", 7, pattern x 4)
-activate SQL
-note left of SQL
-  SELECT ID, FirstName, LastName, Phone, Email
-    FROM Contacts
-   WHERE UserID = ?
-     AND (FirstName LIKE ? OR LastName LIKE ?
-          OR Phone LIKE ? OR Email LIKE ?)
-   ORDER BY LastName, FirstName, ID
-end note
-PHP -> SQL : execute()
-SQL --> PHP : matching rows -- this user's only
-deactivate SQL
+  PHP -> PHP : escape %, _ and backslash\npattern = "%ann%"
 
-PHP -> PHP : build the results array
-PHP --> CALL : 200 { "results": [ {id, firstName,\nlastName, phone, email}, ... ], "error": "" }
-deactivate PHP
+  PHP -> DB : getDbConnection()
+  DB -> SQL : mysqli connect
+  DB --> PHP : connection
 
-CALL -> CALL : JSON.parse(xhr.responseText)
-CALL --> JS : onSuccess(jsonObject)
-deactivate CALL
+  PHP -> SQL : prepare + bind_param("issss")
+  activate SQL
+  note left of SQL
+    SELECT ID, FirstName, LastName, Phone, Email
+      FROM Contacts
+     WHERE UserID = ?
+       AND (FirstName LIKE ? OR LastName LIKE ?
+            OR Phone LIKE ? OR Email LIKE ?)
+     ORDER BY LastName, FirstName, ID
+  end note
+  PHP -> SQL : execute()
+  SQL --> PHP : matching rows
+  deactivate SQL
 
-JS -> JS : discard if requestId is stale\n(a newer search already went out)
+  PHP --> CALL : { "results": [ ... ], "error": "" }
+  deactivate PHP
 
-alt response.error is not ""
-  JS -> USER : showRequestError(response.error)
-else results is empty
-  JS -> USER : "No contacts found"
-else
-  JS -> JS : sortResults() then renderContacts()
-  JS -> USER : contact cards, "n of N contacts"
+  CALL -> CALL : JSON.parse(responseText)
+  CALL --> JS : onSuccess(jsonObject)
+  deactivate CALL
+
+  JS -> JS : discard if requestId is stale
+
+  alt response.error is not ""
+    JS -> USER : showRequestError(response.error)
+  else results is empty
+    JS -> USER : "No contacts found"
+  else
+    JS -> JS : sortResults(), renderContacts()
+    JS -> USER : contact cards, "n of N contacts"
+  end
+
 end
 
 deactivate JS
 
 note across
-  Two things hold this endpoint together. The WHERE clause always starts with
-  UserID = ?, so the search term can only narrow that user's own rows and never
-  reach past them. And it is a prepared statement, so the SQL and the values
-  travel to MySQL separately: a term like  ' OR '1'='1  is compared as literal text.
+  The WHERE clause always starts with UserID = ?, so a search only sees that
+  user's contacts. The query is a prepared statement, so input like  ' OR '1'='1
+  is treated as text.
 end note
 
 @enduml
