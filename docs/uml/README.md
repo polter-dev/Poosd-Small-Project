@@ -1,7 +1,12 @@
 # UML diagrams
 
 Three diagrams for the presentation, written in PlantUML so the source is
-diffable and the PNGs can be regenerated instead of re-drawn by hand.
+diffable and the images can be regenerated instead of re-drawn by hand.
+
+Each diagram is committed three ways: the `.puml` source, a `.png` for quick
+previews, and a `.svg` for slides. Use the SVG in PowerPoint -- it stays sharp
+when projected, and PowerPoint can convert it to editable shapes if a label
+needs changing.
 
 | File | Diagram | Shows |
 |---|---|---|
@@ -13,7 +18,7 @@ The content is traced from the code, not from the contract, so it reflects what
 actually runs: the 250 ms search debounce, the stale-response guard, the LIKE
 escaping, and the `WHERE UserID = ?` scoping.
 
-## Regenerating the PNGs
+## Regenerating the images
 
 Any of these works:
 
@@ -25,4 +30,4 @@ Any of these works:
   java -jar plantuml.jar -tpng -o docs/uml docs/uml/*.puml
   ```
 
-  Add `-tsvg` instead of `-tpng` if you want vector output for the slides.
+  Swap `-tpng` for `-tsvg` to regenerate the vector copies.
