@@ -1,15 +1,24 @@
 @startuml use-case
 ' Contact Manager -- use case diagram
 ' The endpoint that implements each use case is named inside the oval.
+' Source of truth: API/*.php and docs/api-contract.md
 
 !theme plain
 left to right direction
+
+skinparam defaultFontName Verdana
+skinparam defaultFontSize 13
 skinparam shadowing false
 skinparam packageStyle rectangle
 skinparam usecase {
   BackgroundColor White
-  BorderColor Black
+  BorderColor #333333
 }
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor #333333
+}
+skinparam ArrowColor #333333
 
 title Use Cases
 

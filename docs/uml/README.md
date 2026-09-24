@@ -12,11 +12,18 @@ needs changing.
 |---|---|---|
 | `use-case.puml` | Use case | The `User` actor against the seven things the app lets them do, with the endpoint that implements each one |
 | `activity.puml` | Activity | Open the site through login or register, the contacts page, the four contact operations, and logout |
-| `sequence-search.puml` | Sequence | One search, end to end: `contacts.js` -> `callApi()` -> `SearchContacts.php` -> `db.php` -> MySQL and back |
+| `sequence-search.puml` | Sequence | One search, end to end: `contacts.js` -> `api.js` -> `SearchContacts.php` -> `db.php` -> MySQL and back |
 
 The content is traced from the code, not from the contract, so it reflects what
-actually runs: the 250 ms search debounce, the stale-response guard, the LIKE
-escaping, and the `WHERE UserID = ?` scoping.
+actually runs:
+
+- every call goes through `callApiWithDeadline()`, which wraps `callApi()` with
+  a 15 second deadline
+- the 250 ms search debounce and the stale-response guard in `searchContacts()`
+- the session watchdog: `checkSessionStillValid()` every 20 seconds, and any
+  click or keypress re-saving the cookie
+- the LIKE escaping of `%`, `_` and backslash, and the `WHERE UserID = ?` scoping
+- the column rename (`ID` -> `id`) that keeps the response matching the contract
 
 ## Regenerating the images
 

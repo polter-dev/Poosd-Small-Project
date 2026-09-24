@@ -1,22 +1,26 @@
 @startuml activity
 ' Contact Manager -- activity diagram
-' Mirrors the real flow in frontend/js/auth.js and frontend/js/contacts.js.
+' Traced from frontend/js/auth.js and frontend/js/contacts.js.
 
 !theme plain
+
+skinparam defaultFontName Verdana
+skinparam defaultFontSize 13
 skinparam shadowing false
 skinparam ActivityBackgroundColor White
-skinparam ActivityBorderColor Black
+skinparam ActivityBorderColor #333333
 skinparam ActivityDiamondBackgroundColor White
+skinparam ActivityDiamondBorderColor #333333
+skinparam ArrowColor #333333
 
 title Main User Flow
 
 start
 
 :Open https://contacts.cop4331ruth.lol/;
-:index.html loads;
 
-if (readSession() returns a userId?) then (yes)
-  :Redirect to contacts.html;
+if (readSession() finds a userId?) then (yes)
+  :Go to contacts.html;
 else (no)
 
   repeat
@@ -32,18 +36,18 @@ else (no)
   repeat while (response.error is not ""?) is (yes: show the message) not (no)
 
   :saveSession(userId, firstName, lastName)
-  (cookie, 30 minutes);
-  :Redirect to contacts.html;
+  cookie, 30 minutes;
+  :Go to contacts.html;
 endif
 
-if (requireLogin(): is the cookie still there?) then (no: expired or cleared)
+if (requireLogin(): is the cookie there?) then (no)
   :Redirect to index.html;
   stop
 else (yes)
 endif
 
-:POST SearchContacts.php with search = ""
-(an empty term returns every contact this user owns);
+:searchContacts() with an empty term
+POST SearchContacts.php { userId, search: "" };
 :renderContacts(results);
 
 repeat
@@ -74,8 +78,19 @@ repeat
     if (Which action was it?) then (search)
       :renderContacts(results);
     else (add / edit / delete)
-      :Re-run the search, then renderContacts();
+      :Show a toast, then re-run
+      the search to refresh the list;
     endif
+  endif
+
+  if (Cookie still there?\ncheckSessionStillValid(), every 20 s) then (no)
+    :showSessionExpired()
+    modal overlay, the list stays
+    on screen but is now stale;
+    :User clicks "Log in again";
+    :Redirect to index.html;
+    stop
+  else (yes)
   endif
 
 repeat while (Keep working?) is (yes) not (log out)
@@ -93,6 +108,9 @@ note right
   The API always returns HTTP 200. Errors come back
   in the error field, so the front end checks it on
   every response.
+
+  Any click or keypress re-saves the cookie, so the
+  30 minutes count from the last action, not from login.
 end note
 
 @enduml

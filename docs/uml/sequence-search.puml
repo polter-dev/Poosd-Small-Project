@@ -4,10 +4,17 @@
 '   -> API/SearchContacts.php -> API/db.php -> MySQL
 
 !theme plain
+
+skinparam defaultFontName Verdana
+skinparam defaultFontSize 13
 skinparam shadowing false
 skinparam sequenceMessageAlign center
 skinparam ParticipantBackgroundColor White
-skinparam ParticipantBorderColor Black
+skinparam ParticipantBorderColor #333333
+skinparam ActorBorderColor #333333
+skinparam DatabaseBorderColor #333333
+skinparam ArrowColor #333333
+skinparam SequenceLifeLineBorderColor #999999
 
 title Search Contacts
 
@@ -47,7 +54,7 @@ else userId is valid
   PHP -> PHP : escape %, _ and backslash\npattern = "%ann%"
 
   PHP -> DB : getDbConnection()
-  DB -> SQL : mysqli connect
+  DB -> SQL : mysqli connect, utf8mb4
   DB --> PHP : connection
 
   PHP -> SQL : prepare + bind_param("issss")
@@ -64,6 +71,8 @@ else userId is valid
   SQL --> PHP : matching rows
   deactivate SQL
 
+  PHP -> PHP : rename columns to the contract shape\nID -> id, FirstName -> firstName, ...
+
   PHP --> CALL : { "results": [ ... ], "error": "" }
   deactivate PHP
 
@@ -71,7 +80,7 @@ else userId is valid
   CALL --> JS : onSuccess(jsonObject)
   deactivate CALL
 
-  JS -> JS : discard if requestId is stale
+  JS -> JS : drop the answer if requestId is stale
 
   alt response.error is not ""
     JS -> USER : showRequestError(response.error)
