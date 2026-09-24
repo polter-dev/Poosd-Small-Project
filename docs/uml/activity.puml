@@ -1,0 +1,116 @@
+@startuml activity
+' Contact Manager -- activity diagram
+' Traced from frontend/js/auth.js and frontend/js/contacts.js.
+
+!theme plain
+
+skinparam defaultFontName Verdana
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam ActivityBackgroundColor White
+skinparam ActivityBorderColor #333333
+skinparam ActivityDiamondBackgroundColor White
+skinparam ActivityDiamondBorderColor #333333
+skinparam ArrowColor #333333
+
+title Main User Flow
+
+start
+
+:Open https://contacts.cop4331ruth.lol/;
+
+if (readSession() finds a userId?) then (yes)
+  :Go to contacts.html;
+else (no)
+
+  repeat
+    if (Already has an account?) then (yes)
+      :Fill in the login form;
+      :POST Login.php
+      { username, password };
+    else (no)
+      :Fill in the register form;
+      :POST Register.php
+      { firstName, lastName, username, password };
+    endif
+  repeat while (response.error is not ""?) is (yes: show the message) not (no)
+
+  :saveSession(userId, firstName, lastName)
+  cookie, 30 minutes;
+  :Go to contacts.html;
+endif
+
+if (requireLogin(): is the cookie there?) then (no)
+  :Redirect to index.html;
+  stop
+else (yes)
+endif
+
+:searchContacts() with an empty term
+POST SearchContacts.php { userId, search: "" };
+:renderContacts(results);
+
+repeat
+  switch (What does the user do?)
+  case (Search)
+    :Type a term, pick a field
+    (all / name / phone / email);
+    :Wait 250 ms (debounce);
+    :POST SearchContacts.php
+    { userId, search, field };
+  case (Add)
+    :Fill in the new-contact form;
+    :POST AddContact.php
+    { userId, firstName, lastName, phone, email };
+  case (Edit)
+    :Open a card, change the fields;
+    :POST EditContact.php
+    { userId, id, firstName, lastName, phone, email };
+  case (Delete)
+    :Confirm in the dialog;
+    :POST DeleteContact.php
+    { userId, id };
+  endswitch
+
+  if (response.error is ""?) then (no)
+    :Show the message the API returned;
+  else (yes)
+    if (Which action was it?) then (search)
+      :renderContacts(results);
+    else (add / edit / delete)
+      :Show a toast, then re-run
+      the search to refresh the list;
+    endif
+  endif
+
+  if (Cookie still there?\ncheckSessionStillValid(), every 20 s) then (no)
+    :showSessionExpired()
+    modal overlay, the list stays
+    on screen but is now stale;
+    :User clicks "Log in again";
+    :Redirect to index.html;
+    stop
+  else (yes)
+  endif
+
+repeat while (Keep working?) is (yes) not (log out)
+
+:clearSession();
+:Redirect to index.html;
+
+stop
+
+note right
+  Every request goes through callApiWithDeadline()
+  in frontend/js/api.js, which wraps callApi() with
+  a 15 second deadline.
+
+  The API always returns HTTP 200. Errors come back
+  in the error field, so the front end checks it on
+  every response.
+
+  Any click or keypress re-saves the cookie, so the
+  30 minutes count from the last action, not from login.
+end note
+
+@enduml

@@ -1,0 +1,64 @@
+@startuml use-case
+' Contact Manager -- use case diagram
+' The endpoint that implements each use case is named inside the oval.
+' Source of truth: API/*.php and docs/api-contract.md
+
+!theme plain
+left to right direction
+
+skinparam defaultFontName Verdana
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor White
+  BorderColor #333333
+}
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor #333333
+}
+skinparam ArrowColor #333333
+
+title Use Cases
+
+actor "User" as user
+
+rectangle "Contact Manager" {
+
+  package "Account" {
+    usecase "Sign up\n<size:10><i>Register.php</i></size>" as UC_SIGNUP
+    usecase "Log in\n<size:10><i>Login.php</i></size>" as UC_LOGIN
+    usecase "Log out\n<size:10><i>clearSession()</i></size>" as UC_LOGOUT
+  }
+
+  usecase "Valid session\n<size:10><i>userId in cookie</i></size>" as UC_SESSION
+
+  package "Contacts" {
+    usecase "Add contact\n<size:10><i>AddContact.php</i></size>" as UC_ADD
+    usecase "Search contacts\n<size:10><i>SearchContacts.php</i></size>" as UC_SEARCH
+    usecase "Edit contact\n<size:10><i>EditContact.php</i></size>" as UC_EDIT
+    usecase "Delete contact\n<size:10><i>DeleteContact.php</i></size>" as UC_DELETE
+  }
+}
+
+user --> UC_SIGNUP
+user --> UC_LOGIN
+user --> UC_LOGOUT
+user --> UC_ADD
+user --> UC_SEARCH
+user --> UC_EDIT
+user --> UC_DELETE
+
+UC_ADD    ..> UC_SESSION : <<include>>
+UC_SEARCH ..> UC_SESSION : <<include>>
+UC_EDIT   ..> UC_SESSION : <<include>>
+UC_DELETE ..> UC_SESSION : <<include>>
+
+note right of UC_SESSION
+  Every contact endpoint scopes its SQL to
+  WHERE UserID = ?, so one user can never
+  read or change another user's rows.
+end note
+
+@enduml

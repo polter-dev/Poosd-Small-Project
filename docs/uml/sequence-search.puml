@@ -1,0 +1,104 @@
+@startuml sequence-search
+' Contact Manager -- sequence diagram for one search
+' Traced from frontend/js/contacts.js -> frontend/js/api.js
+'   -> API/SearchContacts.php -> API/db.php -> MySQL
+
+!theme plain
+
+skinparam defaultFontName Verdana
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam ParticipantBackgroundColor White
+skinparam ParticipantBorderColor #333333
+skinparam ActorBorderColor #333333
+skinparam DatabaseBorderColor #333333
+skinparam ArrowColor #333333
+skinparam SequenceLifeLineBorderColor #999999
+
+title Search Contacts
+
+actor "User" as USER
+participant "contacts.js" as JS
+participant "api.js" as CALL
+participant "SearchContacts.php" as PHP
+participant "db.php" as DB
+database "MySQL" as SQL
+
+USER -> JS : types "ann"
+activate JS
+
+JS -> JS : debounce 250 ms
+JS -> JS : showLoadingSkeletons()
+JS -> JS : requestId = ++latestSearchRequestId
+
+JS -> CALL : callApiWithDeadline("SearchContacts",\n{ userId: 7, search: "ann", field: "all" })
+activate CALL
+
+CALL -> PHP : POST /API/SearchContacts.php
+activate PHP
+
+PHP -> DB : getRequestInfo()
+DB --> PHP : decoded JSON
+
+PHP -> DB : getIdField(), getTextField()
+DB --> PHP : 7, "ann", "all"
+
+alt userId is not a positive integer
+
+  PHP --> CALL : { "results": [], "error": "A valid userId is required" }
+  destroy PHP
+
+else userId is valid
+
+  PHP -> PHP : escape %, _ and backslash\npattern = "%ann%"
+
+  PHP -> DB : getDbConnection()
+  DB -> SQL : mysqli connect, utf8mb4
+  DB --> PHP : connection
+
+  PHP -> SQL : prepare + bind_param("issss")
+  activate SQL
+  note left of SQL
+    SELECT ID, FirstName, LastName, Phone, Email
+      FROM Contacts
+     WHERE UserID = ?
+       AND (FirstName LIKE ? OR LastName LIKE ?
+            OR Phone LIKE ? OR Email LIKE ?)
+     ORDER BY LastName, FirstName, ID
+  end note
+  PHP -> SQL : execute()
+  SQL --> PHP : matching rows
+  deactivate SQL
+
+  PHP -> PHP : rename columns to the contract shape\nID -> id, FirstName -> firstName, ...
+
+  PHP --> CALL : { "results": [ ... ], "error": "" }
+  deactivate PHP
+
+  CALL -> CALL : JSON.parse(responseText)
+  CALL --> JS : onSuccess(jsonObject)
+  deactivate CALL
+
+  JS -> JS : drop the answer if requestId is stale
+
+  alt response.error is not ""
+    JS -> USER : showRequestError(response.error)
+  else results is empty
+    JS -> USER : "No contacts found"
+  else
+    JS -> JS : sortResults(), renderContacts()
+    JS -> USER : contact cards, "n of N contacts"
+  end
+
+end
+
+deactivate JS
+
+note across
+  The WHERE clause always starts with UserID = ?, so a search only sees that
+  user's contacts. The query is a prepared statement, so input like  ' OR '1'='1
+  is treated as text.
+end note
+
+@enduml
