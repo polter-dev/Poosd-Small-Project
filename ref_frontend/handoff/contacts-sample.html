@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Contacts — reference implementation</title>
+<!--
+  REFERENCE SAMPLE for the locked design (see DESIGN_GUIDE.md).
+  Static: no API calls. Element ids match frontend/contacts.html so js/contacts.js and js/auth.js
+  can be dropped in unchanged. Copy the <style> block into frontend/css/styles.css.
+  Panel/dialog are shown via the "open" class, same as the existing modal-overlay pattern.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#18181B; --surface:#232327; --raised:#2E2E34; --raised-hover:#3A3A41; --border-hover:#4A4A55;
+  --text:#E9E9EC; --text-muted:#9A9AA5;
+  --accent:#9DB0CC; --accent-hover:#B3C3DA; --accent-soft:#C9D4E6;
+  --danger:#E0A3A3; --danger-hover:#ECB8B8; --on-accent:#18181B;
+  --scrim:rgba(24,24,27,.55);
+  --font-display:'Caprasimo',serif; --font-body:'Figtree',system-ui,sans-serif;
+  --shadow-float:0 12px 32px rgba(0,0,0,.4);
+  --r-card:24px; --r-dialog:28px; --r-menu:16px; --r-pill:999px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.5}
+button,input{font:inherit}
+button{cursor:pointer}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{display:block;flex:none}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hidden{display:none!important}
+
+/* ---- top bar ---- */
+.topbar{display:flex;align-items:center;gap:18px;padding:16px 28px;border-bottom:1px solid var(--raised)}
+#title{font-family:var(--font-display);font-weight:400;font-size:20px;margin:0}
+.search{flex:1;max-width:420px;margin-left:auto;position:relative}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)}
+#searchText{width:100%;padding:9px 16px 9px 38px;border-radius:var(--r-pill);border:1px solid var(--raised);background:var(--surface);color:var(--text);caret-color:var(--accent)}
+#searchText::placeholder{color:var(--text-muted)}
+#searchText:hover{border-color:var(--border-hover)}
+#searchText:focus-visible{border-color:var(--accent);outline-offset:0}
+
+/* ---- buttons ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;border:1px solid transparent;border-radius:var(--r-pill);padding:10px 18px;font-family:var(--font-display);font-size:14px;line-height:1.2;color:var(--text);background:transparent;min-height:40px;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-outline{border-color:var(--raised-hover)}
+.btn-outline:hover{background:var(--raised)}
+.btn-danger{background:var(--danger);color:var(--on-accent)}
+.btn-danger:hover{background:var(--danger-hover)}
+.btn-text{font-family:var(--font-body);font-weight:600;font-size:13px;padding:8px}
+.btn-text.danger{color:var(--danger)}
+.btn-text:hover{background:var(--raised)}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:var(--r-pill);background:transparent;color:var(--text-muted);transition:background-color .15s ease,color .15s ease}
+.icon-btn:hover{background:var(--raised);color:var(--text)}
+.icon-btn.lg{width:40px;height:40px;border:1px solid var(--raised)}
+.profile-bubble{width:40px;height:40px;border:0;border-radius:var(--r-pill);background:var(--raised);color:var(--text);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.profile-bubble:hover{background:var(--raised-hover)}
+#profileBubbleWrap{position:relative}
+#profileMenu{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:var(--raised);border:1px solid var(--border-hover);border-radius:var(--r-menu);padding:6px;box-shadow:var(--shadow-float);display:flex;flex-direction:column;gap:2px}
+#profileMenu[hidden]{display:none}
+#profileMenu #userName{display:block;font-size:12px;color:var(--text-muted);padding:8px 12px 4px}
+#profileMenu .menu-item{text-align:left;background:transparent;border:0;border-radius:10px;padding:8px 12px;font-weight:600;font-size:13px;color:var(--text)}
+#profileMenu .menu-item:hover{background:var(--raised-hover)}
+
+/* ---- results header ---- */
+main{padding:22px 28px;display:flex;flex-direction:column;gap:16px}
+.results-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.results-head h2{font-family:var(--font-display);font-weight:400;font-size:26px;margin:0}
+.results-title{display:flex;align-items:baseline;gap:12px}
+#searchResult,#resultCount{font-size:13px;color:var(--text-muted)}
+.seg{display:inline-flex;border:1px solid var(--raised);border-radius:var(--r-pill);overflow:hidden;font-size:12px;font-weight:600}
+.seg button{display:flex;white-space:nowrap;align-items:center;gap:6px;padding:7px 14px;border:0;background:transparent;color:var(--text-muted)}
+.seg button:hover{background:var(--surface)}
+.seg button[aria-pressed="true"]{background:var(--raised);color:var(--text)}
+
+/* ---- card grid ---- */
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--raised);border-radius:var(--r-card);padding:18px 20px;display:flex;flex-direction:column;gap:12px;transition:border-color .15s ease}
+.card:hover,.card:focus-within{border-color:var(--border-hover)}
+.card-head{display:flex;align-items:center;gap:12px}
+.avatar{width:40px;height:40px;flex:none;border-radius:var(--r-pill);background:var(--raised);color:var(--accent);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.avatar.lg{width:56px;height:56px;font-size:17px}
+.card-name{flex:1;min-width:0;font-family:var(--font-display);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-body{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--text-muted)}
+.card-body span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.skeleton .bar{height:10px;border-radius:var(--r-pill);background:var(--raised)}
+.card.skeleton .bar.name{height:14px;width:110px}
+
+/* ---- empty state ---- */
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:64px 24px}
+.empty .ring{width:64px;height:64px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--raised);color:var(--accent);display:flex;align-items:center;justify-content:center}
+.empty h3{font-family:var(--font-display);font-weight:400;font-size:22px;margin:0}
+.empty p{margin:0;color:var(--text-muted);max-width:280px}
+
+/* ---- side panel (Add / Edit) ---- */
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:var(--scrim);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
+.modal-overlay.open{opacity:1;visibility:visible}
+.panel{position:absolute;top:0;right:0;bottom:0;width:400px;max-width:100%;background:var(--surface);border-left:1px solid var(--raised);box-shadow:-12px 0 32px rgba(0,0,0,.4);padding:28px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;transform:translateX(24px);transition:transform .25s ease}
+.modal-overlay.open .panel{transform:none}
+.panel-head{display:flex;align-items:center;justify-content:space-between}
+.inner-title{font-family:var(--font-display);font-weight:400;font-size:22px;margin:0}
+.panel-id{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-muted)}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--text-muted)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.input{width:100%;min-width:0;padding:10px 14px;border-radius:var(--r-pill);border:1px solid var(--raised);background:var(--bg);color:var(--text);caret-color:var(--accent);transition:border-color .15s ease}
+.input:hover{border-color:var(--border-hover)}
+.input:focus-visible{border-color:var(--accent);outline-offset:0}
+.with-copy{display:flex;gap:6px}
+.with-copy .input{flex:1}
+.panel-actions{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.panel-actions .row{display:flex;gap:10px}
+.panel-actions .row .btn-primary{flex:1;padding:12px 22px}
+.panel-actions .row .btn-outline{padding:12px 22px}
+#addContactResult,#editContactResult{font-size:13px;font-weight:600;color:var(--danger)}
+
+/* ---- delete dialog ---- */
+.dialog-overlay{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:24px;background:var(--scrim);opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease}
+.dialog-overlay.open{opacity:1;visibility:visible}
+.dialog{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--raised);border-radius:var(--r-dialog);padding:26px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow-float)}
+.dialog h2{font-family:var(--font-display);font-weight:400;font-size:20px;margin:0}
+.dialog p{margin:0;color:var(--text-muted)}
+.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
+
+/* ---- toast ---- */
+.toast{position:fixed;white-space:nowrap;left:50%;bottom:24px;transform:translateX(-50%);z-index:1200;display:flex;align-items:center;gap:10px;background:var(--text);color:var(--on-accent);border-radius:var(--r-pill);padding:10px 18px 10px 14px;font-size:13px;font-weight:600;box-shadow:var(--shadow-float)}
+.toast .check{width:20px;height:20px;border-radius:var(--r-pill);background:var(--accent);display:flex;align-items:center;justify-content:center}
+.toast[hidden]{display:none}
+
+/* ---- phone FAB (hidden on desktop) ---- */
+.fab{display:none}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:959px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:599px){
+  .topbar{flex-wrap:wrap;padding:20px 16px 12px}
+  #title{font-size:26px}
+  .search{order:3;flex-basis:100%;max-width:none;margin-left:0}
+  #openAddContactBtn{display:none}
+  .fab{display:flex;position:fixed;right:20px;bottom:24px;width:56px;height:56px;border:0;border-radius:var(--r-pill);background:var(--accent);color:var(--on-accent);font-size:26px;font-weight:700;align-items:center;justify-content:center;box-shadow:var(--shadow-float);z-index:900}
+  .fab:hover{background:var(--accent-hover)}
+  main{padding:14px 16px}
+  .grid{grid-template-columns:1fr}
+  .card{padding:14px 16px;border-radius:20px}
+  .card .icon-btn{width:44px;height:44px}
+  .panel{top:auto;width:100%;max-height:92vh;border-left:0;border-top:1px solid var(--raised);border-radius:32px 32px 0 0;padding:12px 24px 28px;transform:translateY(24px)}
+  .panel::before{content:"";width:40px;height:4px;border-radius:var(--r-pill);background:var(--border-hover);align-self:center}
+  .btn{min-height:44px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1 id="title">Contacts</h1>
+  <div class="search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <label for="searchText" class="visually-hidden">Search Contacts</label>
+    <input type="text" id="searchText" placeholder="Search contacts…" autocomplete="off">
+  </div>
+  <button type="button" id="openAddContactBtn" class="btn btn-primary" aria-haspopup="dialog" aria-expanded="false" aria-controls="addContactDiv">+ Add Contact</button>
+  <div id="profileBubbleWrap">
+    <button type="button" id="profileToggleBtn" class="profile-bubble" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" aria-label="Account menu"><span id="profileInitials" aria-hidden="true">RL</span></button>
+    <div id="profileMenu" role="menu" aria-label="Account" hidden>
+      <span id="userName">Logged in as Rick Leinecker</span>
+      <button type="button" id="logoutButton" class="menu-item" role="menuitem">Log Out</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="results-head">
+    <div class="results-title">
+      <h2>All contacts</h2>
+      <span id="resultCount">6 contacts</span>
+      <span id="searchResult" aria-live="polite"></span>
+    </div>
+    <div class="seg" role="group" aria-label="Sort">
+      <button type="button" aria-pressed="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4M17 20V4M3 8l4-4 4 4M7 4v16"/></svg>First A→Z</button>
+      <button type="button" aria-pressed="false">Last A→Z</button>
+    </div>
+  </div>
+
+  <!-- Cards: renderContacts() should emit this structure. Sample data below. -->
+  <div id="contactsListDiv" class="grid">
+    <article class="card">
+      <div class="card-head">
+        <span class="avatar" aria-hidden="true">AO</span>
+        <span class="card-name">Amara Okafor</span>
+        <button type="button" class="icon-btn" aria-label="Edit Amara Okafor"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+        <button type="button" class="icon-btn" aria-label="Delete Amara Okafor"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+      </div>
+      <div class="card-body"><span>(407) 555-0142</span><span>amara.okafor@ucf.edu</span></div>
+    </article>
+    <article class="card">
+      <div class="card-head">
+        <span class="avatar" aria-hidden="true">BC</span>
+        <span class="card-name">Ben Castillo</span>
+        <button type="button" class="icon-btn" aria-label="Edit Ben Castillo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+        <button type="button" class="icon-btn" aria-label="Delete Ben Castillo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+      </div>
+      <div class="card-body"><span>(321) 555-0198</span><span>ben.c@knights.ucf.edu</span></div>
+    </article>
+    <article class="card">
+      <div class="card-head">
+        <span class="avatar" aria-hidden="true">CN</span>
+        <span class="card-name">Chloe Nguyen</span>
+        <button type="button" class="icon-btn" aria-label="Edit Chloe Nguyen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+        <button type="button" class="icon-btn" aria-label="Delete Chloe Nguyen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+      </div>
+      <div class="card-body"><span>(407) 555-0177</span><span>chloe.nguyen@gmail.com</span></div>
+    </article>
+    <article class="card">
+      <div class="card-head">
+        <span class="avatar" aria-hidden="true">DP</span>
+        <span class="card-name">Dev Patel</span>
+        <button type="button" class="icon-btn" aria-label="Edit Dev Patel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+        <button type="button" class="icon-btn" aria-label="Delete Dev Patel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+      </div>
+      <div class="card-body"><span>(689) 555-0120</span><span>dev.patel@outlook.com</span></div>
+    </article>
+    <!-- Loading skeleton (show while "Searching…") -->
+    <article class="card skeleton" aria-hidden="true">
+      <div class="card-head"><span class="avatar"></span><span class="bar name"></span></div>
+      <div class="card-body"><span class="bar" style="width:90px"></span><span class="bar" style="width:150px"></span></div>
+    </article>
+    <article class="card skeleton" aria-hidden="true">
+      <div class="card-head"><span class="avatar"></span><span class="bar name" style="width:90px"></span></div>
+      <div class="card-body"><span class="bar" style="width:100px"></span><span class="bar" style="width:130px"></span></div>
+    </article>
+  </div>
+
+  <!-- Empty state: show instead of the grid when results.length === 0 and search is empty -->
+  <div class="empty hidden" id="emptyState">
+    <span class="ring"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+    <h3>No contacts yet</h3>
+    <p>Add your first person and they'll show up here.</p>
+    <button type="button" class="btn btn-primary">+ Add Contact</button>
+  </div>
+</main>
+
+<button type="button" class="fab" aria-label="Add contact">+</button>
+
+<!-- Edit panel (shown open in this sample). Add panel = same markup with add* ids, no avatar row, no delete link. -->
+<div id="editContactOverlay" class="modal-overlay open">
+  <aside id="editContactDiv" class="panel" role="dialog" aria-modal="true" aria-labelledby="editContactTitle">
+    <div class="panel-head">
+      <h2 id="editContactTitle" class="inner-title">Edit contact</h2>
+      <button type="button" class="icon-btn" aria-label="Close edit contact form"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="panel-id"><span class="avatar lg" aria-hidden="true">AO</span><span>Contact #1042</span></div>
+    <input type="hidden" id="editContactId" value="1042">
+    <div class="field-row">
+      <div class="field"><label for="editFirstName">First name</label><input type="text" id="editFirstName" class="input" value="Amara"></div>
+      <div class="field"><label for="editLastName">Last name</label><input type="text" id="editLastName" class="input" value="Okafor"></div>
+    </div>
+    <div class="field">
+      <label for="editPhone">Phone</label>
+      <div class="with-copy">
+        <input type="tel" id="editPhone" class="input" value="(407) 555-0142">
+        <button type="button" class="icon-btn lg" aria-label="Copy phone" data-copy="editPhone"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="3"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="editEmail">Email</label>
+      <div class="with-copy">
+        <input type="email" id="editEmail" class="input" value="amara.okafor@ucf.edu">
+        <button type="button" class="icon-btn lg" aria-label="Copy email" data-copy="editEmail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="3"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+      </div>
+    </div>
+    <span id="editContactResult" aria-live="polite"></span>
+    <div class="panel-actions">
+      <div class="row">
+        <button type="button" id="saveEditButton" class="btn btn-primary">Save changes</button>
+        <button type="button" id="cancelEditButton" class="btn btn-outline">Cancel</button>
+      </div>
+      <button type="button" id="deleteFromEditButton" class="btn btn-text danger">Delete this contact</button>
+    </div>
+  </aside>
+</div>
+
+<!-- Delete confirmation (replaces confirm()). Toggle "open". -->
+<div id="deleteOverlay" class="dialog-overlay">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="deleteTitle" aria-describedby="deleteBody">
+    <h2 id="deleteTitle">Delete Amara Okafor?</h2>
+    <p id="deleteBody">This removes the contact from your list. There is no undo.</p>
+    <div class="dialog-actions">
+      <button type="button" id="deleteKeepButton" class="btn btn-outline">Keep</button>
+      <button type="button" id="deleteConfirmButton" class="btn btn-danger">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success toast. Set text, unhide, hide after 2500ms. -->
+<div id="toast" class="toast" role="status" aria-live="polite" hidden>
+  <span class="check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+  <span id="toastText">Contact added</span>
+</div>
+
+<!-- Sample-only wiring so the static page is clickable. Real behaviour lives in js/contacts.js / js/auth.js. -->
+<script>
+document.getElementById('profileToggleBtn').addEventListener('click',function(){var m=document.getElementById('profileMenu');m.hidden=!m.hidden;this.setAttribute('aria-expanded',String(!m.hidden));});
+document.querySelectorAll('#cancelEditButton,#editContactDiv .icon-btn[aria-label^="Close"]').forEach(function(b){b.addEventListener('click',function(){document.getElementById('editContactOverlay').classList.remove('open');});});
+document.querySelectorAll('.card .icon-btn[aria-label^="Edit"]').forEach(function(b){b.addEventListener('click',function(){document.getElementById('editContactOverlay').classList.add('open');});});
+document.querySelectorAll('.card .icon-btn[aria-label^="Delete"],#deleteFromEditButton').forEach(function(b){b.addEventListener('click',function(){document.getElementById('deleteOverlay').classList.add('open');});});
+document.querySelectorAll('#deleteKeepButton,#deleteConfirmButton').forEach(function(b){b.addEventListener('click',function(){document.getElementById('deleteOverlay').classList.remove('open');});});
+document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){var v=document.getElementById(b.dataset.copy).value;if(navigator.clipboard)navigator.clipboard.writeText(v);var t=document.getElementById('toast');document.getElementById('toastText').textContent='Copied';t.hidden=false;setTimeout(function(){t.hidden=true;},2500);});});
+document.querySelectorAll('.seg button').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.seg button').forEach(function(x){x.setAttribute('aria-pressed','false');});b.setAttribute('aria-pressed','true');});});
+</script>
+</body>
+</html>
